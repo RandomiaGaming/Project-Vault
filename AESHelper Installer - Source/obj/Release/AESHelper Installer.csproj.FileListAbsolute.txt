@@ -1,9 +1,0 @@
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\bin\Release\AESHelperInstaller.exe.config
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\bin\Release\AESHelperInstaller.exe
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\bin\Release\AESHelperInstaller.pdb
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Release\Interop.IWshRuntimeLibrary.dll
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Release\AESHelper Installer.csproj.ResolveComReference.cache
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Release\AESHelper Installer.csproj.CoreCompileInputs.cache
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Release\AESHelperInstaller.exe
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Release\AESHelperInstaller.pdb
-D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Release\AESHelper Installer.csproj.AssemblyReference.cache
