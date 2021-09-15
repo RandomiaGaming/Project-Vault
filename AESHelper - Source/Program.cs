@@ -1,65 +1,91 @@
 ﻿using System;
-using System.IO;
 using System.Diagnostics;
-using System.IO.Compression;
-using System.Text;
-using System.Security.Cryptography;
+using RandomiaGaming.Helpers;
+using System.IO;
+using Microsoft.VisualBasic;
+using System.Windows.Forms;
 
 namespace AESHelper
 {
     public static class Program
     {
         [STAThread]
-        public static void Main()
+        public static void Main(string[] args)
         {
-            string[] arguments = Environment.GetCommandLineArgs();
-            if (arguments is null || arguments.Length < 2)
+            try
             {
-                Console.WriteLine("Could not process arguments because no arguments were given.");
-            }
-            else if (arguments.Length > 2)
-            {
-                Console.WriteLine("Could not process arguments because too many arguments were given.");
-            }
-            else
-            {
-                string targetPath = arguments[1];
-                LockOrUnlockFileOrFolder(targetPath);
-            }
-            Console.WriteLine("Press any key to close this window.");
-            Console.ReadKey();
-            Process.GetCurrentProcess().Kill();
-        }
-        public static void LockOrUnlockFileOrFolder(string targetPath)
-        {
-            if (targetPath is null || targetPath == "")
-            {
-                Console.WriteLine("Could not lock or unlock file or folder because target path was null.");
-            }
-            else
-            {
-                if (File.Exists(targetPath))
+                if (args is null)
                 {
-                    if (targetPath.ToUpper().EndsWith(".AES"))
-                    {
-                        UnlockFile(targetPath);
-                    }
-                    else
-                    {
-                        LockFile(targetPath);
-                    }
+                    throw new NullReferenceException("Command line arguments were null which should be impossible.");
                 }
-                else if (Directory.Exists(targetPath))
+                else if (args.Length == 0)
                 {
-                    LockFolder(targetPath);
+                    throw new ArgumentException("No command line arguments were given.");
+                }
+                else if (args.Length > 2)
+                {
+                    throw new ArgumentException("Too many command line arguments were given.");
                 }
                 else
                 {
-                    Console.WriteLine($"Could not lock or unlock file or folder \"{targetPath}\" because target path was invalid.");
+                    string commandName = args[0];
+
+                    if (commandName is null)
+                    {
+                        throw new NullReferenceException("Command name was null which should be impossible.");
+                    }
+                    else if (commandName.ToLower() == "encrypt")
+                    {
+                        if (args.Length < 2)
+                        {
+                            throw new ArgumentException("No file or folder was specified to encrypt.");
+                        }
+                        else
+                        {
+                            string targetPath = args[1];
+                            EncryptFileOrFolder(targetPath);
+                        }
+                    }
+                    else if (commandName.ToLower() == "decrypt")
+                    {
+                        if (args.Length < 2)
+                        {
+                            throw new ArgumentException("No file or folder was specified to decrypt.");
+                        }
+                        else
+                        {
+                            string targetPath = args[1];
+                            DecryptFile(targetPath);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception($"\"{commandName}\" is not a valid command.");
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    MessageBox.Show(ex.Message, "Exception Thrown", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch
+                {
+                    try
+                    {
+                        Console.WriteLine("An unknown exception was thrown.");
+                    }
+                    catch
+                    {
+
+                    }
                 }
             }
+            Process.GetCurrentProcess().Kill();
         }
-        public static void UnlockFile(string targetFilePath)
+        public static void EncryptFile(string targetFilePath)
         {
             if (targetFilePath is null || targetFilePath == "")
             {
@@ -122,44 +148,7 @@ namespace AESHelper
                 }
             }
         }
-        public static void LockFile(string targetFilePath)
-        {
-            if (targetFilePath is null || targetFilePath == "")
-            {
-                Console.WriteLine("Could not lock file beacuse target file path was null.");
-            }
-            else
-            {
-                if (File.Exists(targetFilePath))
-                {
-                    Console.WriteLine($"Locking \"{targetFilePath}\".");
-
-                    byte[] fileContents = File.ReadAllBytes(targetFilePath);
-                    if (fileContents is null || fileContents.Length == 0)
-                    {
-                        Console.WriteLine($"Could not lock file \"{targetFilePath}\" because the file was empty.");
-                    }
-                    else
-                    {
-                        try
-                        {
-                            string password = PromptForPassword(true);
-                            File.WriteAllBytes(targetFilePath, Encrypt(File.ReadAllBytes(targetFilePath), Hash(EncodeString(password))));
-                            File.Move(targetFilePath, targetFilePath + ".aes");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Could not lock file \"{targetFilePath}\" due to exception: {ex.Message}");
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Could not lock file file \"{targetFilePath}\" because target file path was invalid.");
-                }
-            }
-        }
-        public static void LockFolder(string targetFolderPath)
+        public static void EncryptFolder(string targetFolderPath)
         {
             if (targetFolderPath is null || targetFolderPath == "")
             {
@@ -189,153 +178,113 @@ namespace AESHelper
                 }
             }
         }
-
-        private static string PromptForPassword(bool requireConfirmation)
+        public static void DecryptFile(string targetPath)
         {
-            bool validPassword = false;
-            string password = null;
-            while (!validPassword)
+            if (targetPath is null || targetPath == "")
             {
-                Console.WriteLine($"Please enter your password below.");
-                password = Console.ReadLine();
-                if (password == "mydick")
+                Console.WriteLine("Could not lock file beacuse target file path was null.");
+            }
+            else
+            {
+                if (File.Exists(targetPath))
                 {
-                    Console.WriteLine("Password was too short. Please try again.");
-                }
-                else if (!(password is null) && password != "")
-                {
-                    if (requireConfirmation)
+                    Console.WriteLine($"Locking \"{targetPath}\".");
+
+                    byte[] fileContents = File.ReadAllBytes(targetPath);
+                    if (fileContents is null || fileContents.Length == 0)
                     {
-                        Console.WriteLine("Please confirm your password by typing it again.");
-                        string passwordConfirmation = Console.ReadLine();
-                        if (passwordConfirmation != password)
-                        {
-                            Console.WriteLine("Passwords did not match. Please try again.");
-                            validPassword = false;
-                        }
-                        else
-                        {
-                            validPassword = true;
-                        }
+                        Console.WriteLine($"Could not lock file \"{targetPath}\" because the file was empty.");
                     }
                     else
                     {
-                        validPassword = true;
+                        try
+                        {
+                            string password = PromptForPasswordWithConfirmation();
+                            File.WriteAllBytes(targetPath, Encrypt(File.ReadAllBytes(targetPath), Hash(EncodeString(password))));
+                            File.Move(targetPath, targetPath + ".aes");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Could not lock file \"{targetPath}\" due to exception: {ex.Message}");
+                        }
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Password cannot be empty.");
-                    validPassword = false;
+                    Console.WriteLine($"Could not lock file file \"{targetPath}\" because target file path was invalid.");
                 }
             }
-            return password;
         }
 
-        public static byte[] Decrypt(byte[] data, byte[] key)
+        public static string PromptForPassword()
         {
-            if (data is null)
+            try
             {
-                throw new NullReferenceException("Decrypting operation was aborted because the target data was null.");
+                while (true)
+                {
+                    string password = Interaction.InputBox("Please enter your password below.", "Enter Password", "", -1, -1);
+                    if (password is null || password == "")
+                    {
+                        MessageBox.Show("Password cannot be null or empty. Please try again.", "Invalid Password", MessageBoxButtons.OK);
+                    }
+                    else
+                    {
+                        return password;
+                    }
+                }
             }
-            if (data.Length <= 0)
+            catch (Exception ex)
             {
-                throw new ArgumentException("Decrypting operation was aborted because the target data had a length of zero.");
+                Exception rethrowException;
+                try
+                {
+                    rethrowException = new Exception($"Could not get password due to exception \"{ex.Message}\".");
+                }
+                catch
+                {
+                    rethrowException = new Exception("Could not get password due to an unknown exception.");
+                }
+                throw rethrowException;
             }
-            if (key is null)
-            {
-                throw new NullReferenceException("Decrypting operation was aborted because the given key was null.");
-            }
-            if (key.Length <= 0)
-            {
-                throw new ArgumentException("Decrypting operation was aborted because the given key had a length of zero.");
-            }
-
-            Aes aes = Aes.Create();
-
-            aes.KeySize = key.Length * 8;
-            aes.IV = new byte[aes.BlockSize / 8];
-            aes.Key = key;
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.ISO10126;
-
-            ICryptoTransform decryptor = aes.CreateDecryptor();
-            MemoryStream ms = new MemoryStream();
-            CryptoStream cryptoStream = new CryptoStream(ms, decryptor, CryptoStreamMode.Write);
-            cryptoStream.Write(data, 0, data.Length);
-            cryptoStream.FlushFinalBlock();
-            return ms.ToArray();
         }
-        public static byte[] Encrypt(byte[] data, byte[] key)
+        private static string PromptForPasswordWithConfirmation()
         {
-            if (data is null)
+            try
             {
-                throw new NullReferenceException("Encrypting operation was aborted because the target data was null.");
+                while (true)
+                {
+                    string password = Interaction.InputBox("Please enter your password below.", "Enter Password", "", -1, -1);
+                    if (password is null || password == "")
+                    {
+                        MessageBox.Show("Password cannot be null or empty. Please try again.", "Invalid Password", MessageBoxButtons.OK);
+                    }
+                    else
+                    {
+                        string passwordConfirmation = Interaction.InputBox("Please confirm your password below.", "Confirm Password", "", -1, -1);
+                        if (passwordConfirmation == password)
+                        {
+                            return password;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Passwords did not match. Please try again.", "Non-matching Passwords", MessageBoxButtons.OK);
+                        }
+                    }
+                }
             }
-            if (data.Length <= 0)
+            catch (Exception ex)
             {
-                throw new ArgumentException("Encrypting operation was aborted because the target data had a length of zero.");
+                Exception rethrowException;
+                try
+                {
+                    rethrowException = new Exception($"Could not get password due to exception \"{ex.Message}\".");
+                }
+                catch
+                {
+                    rethrowException = new Exception("Could not get password due to an unknown exception.");
+                }
+                throw rethrowException;
             }
-            if (key is null)
-            {
-                throw new NullReferenceException("Encrypting operation was aborted because the given key was null.");
-            }
-            if (key.Length <= 0)
-            {
-                throw new ArgumentException("Encrypting operation was aborted because the given key had a length of zero.");
-            }
-            Aes aes = Aes.Create();
-
-            aes.KeySize = key.Length * 8;
-            aes.IV = new byte[aes.BlockSize / 8];
-            aes.Key = key;
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.ISO10126;
-
-            ICryptoTransform decryptor = aes.CreateEncryptor();
-            MemoryStream ms = new MemoryStream();
-            CryptoStream cryptoStream = new CryptoStream(ms, decryptor, CryptoStreamMode.Write);
-            cryptoStream.Write(data, 0, data.Length);
-            cryptoStream.FlushFinalBlock();
-            return ms.ToArray();
-        }
-        public static byte[] Hash(byte[] data)
-        {
-            if (data is null)
-            {
-                throw new NullReferenceException("Hashing operation was aborted because the target data was null.");
-            }
-            if (data.Length <= 0)
-            {
-                throw new ArgumentException("Hashing operation was aborted because the target data had a length of zero.");
-            }
-            SHA256 hash = SHA256.Create();
-            return hash.ComputeHash(data);
-        }
-
-        public static byte[] EncodeString(string source)
-        {
-            if (source is null)
-            {
-                return new byte[0];
-            }
-            if (source.Length <= 0)
-            {
-                return new byte[0];
-            }
-            return Encoding.Unicode.GetBytes(source);
-        }
-        public static string DecodeString(byte[] data)
-        {
-            if (data is null)
-            {
-                return "";
-            }
-            if (data.Length <= 0)
-            {
-                return "";
-            }
-            return Encoding.Unicode.GetString(data);
         }
     }
 }
