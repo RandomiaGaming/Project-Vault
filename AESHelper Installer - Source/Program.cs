@@ -3,6 +3,10 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using System.IO.Compression;
+using System.Diagnostics;
+using System.Collections.Generic;
+
 namespace AESHelper.Installer
 {
     public static class Program
@@ -14,19 +18,12 @@ namespace AESHelper.Installer
             {
                 if (MessageBox.Show($"AESHelper has already been installed. Would you like to uninstall it?", $"Uninstall AESHelper?", MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
-                    try
-                    {
-                        Uninstall();
-                        MessageBox.Show($"AESHelper was successfully uninstalled!", $"Uninstall Successful!", MessageBoxButtons.OK);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"AESHelper could not be uninstalled due to exception: {ex.Message}!", "Uninstall Failed!", MessageBoxButtons.OK);
-                    }
+                    Uninstall();
+                    MessageBox.Show($"AESHelper was successfully uninstalled!", $"Uninstall Successful!", MessageBoxButtons.OK);
                 }
                 else
                 {
-                    return;
+                    Process.GetCurrentProcess().Kill();
                 }
             }
             else
@@ -37,102 +34,171 @@ namespace AESHelper.Installer
                     {
                         Install();
                         MessageBox.Show($"AESHelper was succesfully installed!", "Install Successful!", MessageBoxButtons.OK);
+                        Process.GetCurrentProcess().Kill();
+
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show($"AESHelper could not be installed due to exception: {ex.Message}!", "Install Failed!", MessageBoxButtons.OK);
                         MessageBox.Show($"Attempting to undo changes!", "Undoing Changes!", MessageBoxButtons.OK);
-                        try
-                        {
-                            Uninstall();
-                            MessageBox.Show($"Changes were successfully undone!", "Undo Successful!", MessageBoxButtons.OK);
-                        }
-                        catch (Exception ex2)
-                        {
-                            MessageBox.Show($"Changes could not be undone due to exception: {ex2.Message}!", "Undo Failed!", MessageBoxButtons.OK);
-                        }
+                        Uninstall();
+                        MessageBox.Show($"Changes were successfully undone!", "Undo Successful!", MessageBoxButtons.OK);
+                        Process.GetCurrentProcess().Kill();
                     }
                 }
                 else
                 {
-                    return;
+                    Process.GetCurrentProcess().Kill();
                 }
             }
+            Process.GetCurrentProcess().Kill();
         }
         public static void Install()
         {
+            Uninstall();
+
             Directory.CreateDirectory(@"C:\Program Files\AESHelper");
             Assembly assembly = Assembly.GetCallingAssembly();
-            Stream payloadStream = assembly.GetManifestResourceStream("AESHelper.Installer.AESHelper.exe");
+            Stream payloadStream = assembly.GetManifestResourceStream("AESHelper.Installer.Payload.zip");
             byte[] payloadBytes = new byte[(int)payloadStream.Length];
             payloadStream.Read(payloadBytes, 0, (int)payloadStream.Length);
             payloadStream.Dispose();
-            File.WriteAllBytes(@"C:\Program Files\AESHelper\AESHelper.exe", payloadBytes);
+            string payloadTempFilePath = Path.GetTempFileName();
+            File.WriteAllBytes(payloadTempFilePath, payloadBytes);
+            ZipFile.ExtractToDirectory(payloadTempFilePath, @"C:\Program Files\AESHelper");
+            File.Delete(payloadTempFilePath);
 
             RegistryKey root = Registry.ClassesRoot;
-
-            RegistryKey fileContextMenuRoot = root.OpenSubKey("*", true);
-            RegistryKey fileContextMenuShell = fileContextMenuRoot.OpenSubKey("shell", true);
-
-            fileContextMenuShell.DeleteSubKeyTree("AESHelper", false);
-
-            RegistryKey fileContextMenu = fileContextMenuShell.CreateSubKey("AESHelper", true);
-            fileContextMenu.SetValue("", "AESHelper Lock/Unlock");
-            fileContextMenu.SetValue("Icon", "AESHelper.Installer.AESHelper.exe");
-
-            RegistryKey fileContextMenuCommand = fileContextMenu.CreateSubKey("command", true);
-            fileContextMenuCommand.SetValue("", "\"C:\\Program Files\\AESHelper\\AESHelper.exe\" \"%1\"");
-
-            fileContextMenuCommand.Close();
-            fileContextMenu.Close();
-            fileContextMenuShell.Close();
-            fileContextMenuRoot.Close();
-
-            RegistryKey folderContextMenuRoot = root.OpenSubKey("Directory", true);
-            RegistryKey folderContextMenuShell = folderContextMenuRoot.OpenSubKey("shell", true);
-
-            folderContextMenuShell.DeleteSubKeyTree("AESHelper", false);
-
-            RegistryKey folderContextMenu = folderContextMenuShell.CreateSubKey("AESHelper", true);
-            folderContextMenu.SetValue("", "AESHelper Lock/Unlock");
-            folderContextMenu.SetValue("Icon", "AESHelper.Installer.AESHelper.exe");
-
-            RegistryKey folderContextMenuCommand = folderContextMenu.CreateSubKey("command", true);
-            folderContextMenuCommand.SetValue("", "\"C:\\Program Files\\AESHelper\\AESHelper.exe\" \"%1\"");
-
-            folderContextMenuCommand.Close();
-            folderContextMenu.Close();
-            folderContextMenuShell.Close();
-            folderContextMenuRoot.Close();
-
-            root.Close();
+            //Open .AES files
+            RegistryKey DotAES = root.CreateSubKey(".aes", true);
+            DotAES.SetValue(null, "AESHelper.OpenFile");
+            DotAES.Dispose();
+            RegistryKey AESHelperOpenFile = root.CreateSubKey("AESHelper.OpenFile", true);
+            AESHelperOpenFile.SetValue("Icon", @"C:\Program Files\AESHelper\AESHelper.exe");
+            RegistryKey AESHelperOpenFileShell = AESHelperOpenFile.CreateSubKey("shell", true);
+            RegistryKey AESHelperOpenFileShellOpen = AESHelperOpenFileShell.CreateSubKey("Open", true);
+            RegistryKey AESHelperOpenFileShellOpenCommand = AESHelperOpenFileShellOpen.CreateSubKey("command", true);
+            AESHelperOpenFileShellOpenCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""DecryptFile"" ""%1""");
+            AESHelperOpenFileShellOpenCommand.Dispose();
+            AESHelperOpenFileShellOpen.Dispose();
+            AESHelperOpenFileShell.Dispose();
+            AESHelperOpenFile.Dispose();
+            //Encrypt File Context Menu
+            RegistryKey Star = root.OpenSubKey("*", true);
+            RegistryKey StarShell = Star.OpenSubKey("shell", true);
+            RegistryKey StarShellAESHelperEncryptFile = StarShell.CreateSubKey("AESHelper.EncryptFile", true);
+            StarShellAESHelperEncryptFile.SetValue(null, "AES Encrypt File");
+            StarShellAESHelperEncryptFile.SetValue("Icon", @"C:\Program Files\AESHelper\AESHelper.exe");
+            RegistryKey StarShellAESHelperEncryptFileCommand = StarShellAESHelperEncryptFile.CreateSubKey("command", true);
+            StarShellAESHelperEncryptFileCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""EncryptFile"" ""%1""");
+            StarShellAESHelperEncryptFileCommand.Dispose();
+            StarShellAESHelperEncryptFile.Dispose();
+            //Encrypt Directory Context Menu
+            RegistryKey DirectoryKey = root.OpenSubKey("Directory", true);
+            RegistryKey DirectoryShell = DirectoryKey.OpenSubKey("shell", true);
+            RegistryKey DirectoryShellAESHelperEncryptDirectory = DirectoryShell.CreateSubKey("AESHelper.EncryptDirectory", true);
+            DirectoryShellAESHelperEncryptDirectory.SetValue(null, "AES Encrypt Directory");
+            DirectoryShellAESHelperEncryptDirectory.SetValue("Icon", @"C:\Program Files\AESHelper\AESHelper.exe");
+            RegistryKey DirectoryShellAESHelperEncryptDirectoryCommand = DirectoryShellAESHelperEncryptDirectory.CreateSubKey("command", true);
+            DirectoryShellAESHelperEncryptDirectoryCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""EncryptDirectory"" ""%1""");
+            DirectoryShellAESHelperEncryptDirectoryCommand.Dispose();
+            DirectoryShellAESHelperEncryptDirectory.Dispose();
+            DirectoryShell.Dispose();
+            DirectoryKey.Dispose();
+            root.Dispose();
+            //Register to CMD Path
+            string pathValue = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
+            List<string> pathSubValues = new List<string>(pathValue.Split(';'));
+            pathSubValues.Add(@"C:\Program Files\AESHelper");
+            string newPathValue = "";
+            foreach (string pathSubValue in pathSubValues)
+            {
+                newPathValue += pathSubValue + ";";
+            }
+            Environment.SetEnvironmentVariable("PATH", newPathValue, EnvironmentVariableTarget.Machine);
         }
         public static void Uninstall()
         {
-            if (Directory.Exists(@"C:\Program Files\AESHelper"))
+            try
             {
                 Directory.Delete(@"C:\Program Files\AESHelper", true);
             }
+            catch
+            {
 
-            RegistryKey root = Registry.ClassesRoot;
+            }
+            try
+            {
+                RegistryKey root = Registry.ClassesRoot;
+                try
+                {
+                    root.DeleteSubKeyTree(".aes");
+                }
+                catch
+                {
 
-            RegistryKey fileContextMenuRoot = root.OpenSubKey("*", true);
-            RegistryKey fileContextMenuShell = fileContextMenuRoot.OpenSubKey("shell", true);
+                }
+                try
+                {
+                    root.DeleteSubKeyTree("AESHelper.OpenFile");
+                }
+                catch
+                {
 
-            fileContextMenuShell.DeleteSubKeyTree("AESHelper", false);
+                }
+                try
+                {
+                    RegistryKey Star = root.OpenSubKey("*", true);
+                    RegistryKey StarShell = Star.OpenSubKey("shell", true);
+                    StarShell.DeleteSubKeyTree("AESHelper.DecryptFile");
+                    StarShell.Dispose();
+                    Star.Dispose();
+                }
+                catch
+                {
 
-            fileContextMenuShell.Close();
-            fileContextMenuRoot.Close();
+                }
+                try
+                {
+                    RegistryKey DirectoryKey = root.OpenSubKey("Directory", true);
+                    RegistryKey DirectoryShell = DirectoryKey.OpenSubKey("shell", true);
+                    DirectoryShell.DeleteSubKeyTree("AESHelper.EncryptDirectory");
+                    DirectoryShell.Dispose();
+                    DirectoryKey.Dispose();
+                }
+                catch
+                {
 
-            RegistryKey folderContextMenuRoot = root.OpenSubKey("Directory", true);
-            RegistryKey folderContextMenuShell = folderContextMenuRoot.OpenSubKey("shell", true);
+                }
+                root.Dispose();
+            }
+            catch
+            {
 
-            folderContextMenuShell.DeleteSubKeyTree("AESHelper", false);
+            }
+            try
+            {
+                string pathValue = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
+                List<string> pathSubValues = new List<string>(pathValue.Split(';'));
+                for (int i = 0; i < pathSubValues.Count; i++)
+                {
+                    if (pathSubValues[i].Replace("/", "\\").ToLower() == @"c:\program files\aeshelper")
+                    {
+                        pathSubValues.RemoveAt(i);
+                        i--;
+                    }
+                }
+                string newPathValue = "";
+                foreach (string pathSubValue in pathSubValues)
+                {
+                    newPathValue += pathSubValue + ";";
+                }
+                Environment.SetEnvironmentVariable("PATH", newPathValue, EnvironmentVariableTarget.Machine);
+            }
+            catch
+            {
 
-            folderContextMenuShell.Close();
-            folderContextMenuRoot.Close();
-
-            root.Close();
+            }
         }
     }
 }
