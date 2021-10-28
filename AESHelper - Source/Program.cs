@@ -5,16 +5,13 @@ using System.Reflection;
 using System.Collections.Generic;
 using Microsoft.VisualBasic;
 using System.Windows.Forms;
-using System.IO.Compression;
 using System.Text;
 using System.Security.Cryptography;
-using Newtonsoft.Json;
 
 namespace AESHelper
 {
     public static class Program
     {
-        private static readonly Random RNG = new Random();
         [STAThread]
         public static void Main()
         {
@@ -24,41 +21,45 @@ namespace AESHelper
             }
             catch (Exception ex)
             {
-                LogException(ex);
+                HandleException(ex);
             }
         }
         #region Command Processing
         public static string GetArgumentCommand()
         {
-            try
+            List<string> arguments = new List<string>(Environment.GetCommandLineArgs());
+            if (arguments.Count <= 0)
             {
-                List<string> arguments = new List<string>(Environment.GetCommandLineArgs());
-                if (arguments.Count >= 1)
+                return "";
+            }
+            arguments.RemoveAt(0);
+            string output = "";
+            for (int i = 0; i < arguments.Count; i++)
+            {
+                if (arguments[i].Contains(" "))
                 {
-                    arguments.RemoveAt(0);
-                }
-                else
-                {
-                    return "";
-                }
-                string output = "";
-                foreach (string arg in arguments)
-                {
-                    if (arg.Contains(" "))
+                    if (i == 0)
                     {
-                        output += $" \"{arg}\"";
+                        output += $"\"{arguments[i]}\"";
                     }
                     else
                     {
-                        output += $" {arg}";
+                        output += $" \"{arguments[i]}\"";
                     }
                 }
-                return output;
+                else
+                {
+                    if (i == 0)
+                    {
+                        output += $"{arguments[i]}";
+                    }
+                    else
+                    {
+                        output += $" {arguments[i]}";
+                    }
+                }
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not get command from arguments because of exception: {GetExceptionMessage(ex)}");
-            }
+            return output;
         }
         public static void RunCommand(string command)
         {
@@ -66,70 +67,115 @@ namespace AESHelper
             {
                 throw new Exception("Could not run command because command is null.");
             }
-            if (command == "")
+            List<string> splitCommand = SplitCommand(command);
+            if (splitCommand is null || splitCommand.Count < 1)
             {
                 return;
             }
-            List<string> splitCommand = SplitCommand(command);
             string commandName = splitCommand[0];
+            splitCommand.RemoveAt(0);
             string commandNameToUpper = commandName.ToUpper();
-
+            List<string> arguments = splitCommand;
             switch (commandNameToUpper)
             {
-                case "ENCRYPTFILE":
-                    if (splitCommand.Count < 2)
+                case "SHRED":
+                    if (arguments.Count < 1)
                     {
-                        throw new Exception("Could not run command EncryptFile because no argument was provided for file path.");
+                        throw new Exception("Could not run Shred command because no argument was provided for targetPath.");
                     }
-                    else if (splitCommand.Count > 2)
+                    else if (arguments.Count > 1)
                     {
-                        throw new Exception("Could not run command EncryptFile because too many arguments were provided.");
+                        throw new Exception("Could not run Shred command because too many arguments were provided.");
                     }
-                    EncryptFile(splitCommand[1]);
-                    break;
-                case "ENCRYPTDIRECTORY":
-                    if (splitCommand.Count < 2)
-                    {
-                        throw new Exception("Could not run command EncryptDirectory because no argument was provided for directory path.");
-                    }
-                    else if (splitCommand.Count > 2)
-                    {
-                        throw new Exception("Could not run command EncryptDirectory because too many arguments were provided.");
-                    }
-                    EncryptDirectory(splitCommand[1]);
-                    break;
-                case "DECRYPTFILE":
-                    if (splitCommand.Count < 2)
-                    {
-                        throw new Exception("Could not run command DecryptFile because no argument was provided for file path.");
-                    }
-                    else if (splitCommand.Count > 2)
-                    {
-                        throw new Exception("Could not run command DecryptFile because too many arguments were provided.");
-                    }
-                    DecryptFile(splitCommand[1]);
+                    ShredCommand(arguments[0]);
                     break;
                 case "SHREDFILE":
-                    if (splitCommand.Count < 2)
+                    if (arguments.Count < 1)
                     {
-                        throw new Exception("Could not run command ShredFile because no argument was provided for file path.");
+                        throw new Exception("Could not run ShredFile command command because no argument was provided for filePath.");
                     }
-                    else if (splitCommand.Count > 2)
+                    else if (arguments.Count > 1)
                     {
-                        throw new Exception("Could not run command ShredFile because too many arguments were provided.");
+                        throw new Exception("Could not run ShredFile command because too many arguments were provided.");
                     }
-                    ShredFile(splitCommand[1]);
+                    ShredFileCommand(arguments[0]);
                     break;
                 case "SHREDDIRECTORY":
-                    if (splitCommand.Count < 2)
+                    if (arguments.Count < 1)
                     {
-                        throw new Exception("Could not run command ShredDirectory because no argument was provided for directory path.");
+                        throw new Exception("Could not run ShredDirectory command because no argument was provided for directoryPath.");
                     }
-                    else if (splitCommand.Count > 2)
+                    else if (arguments.Count > 1)
                     {
-                        throw new Exception("Could not run command ShredDirectory because too many arguments were provided.");
+                        throw new Exception("Could not run ShredDirectory command because too many arguments were provided.");
                     }
-                    ShredDirectory(splitCommand[1]);
+                    ShredDirectoryCommand(arguments[0]);
+                    break;
+                case "ENCRYPT":
+                    if (arguments.Count < 1)
+                    {
+                        throw new Exception("Could not run Encrypt command because no argument was provided for targetPath.");
+                    }
+                    else if (arguments.Count > 1)
+                    {
+                        throw new Exception("Could not run Encrypt command because too many arguments were provided.");
+                    }
+                    EncryptCommand(arguments[0]);
+                    break;
+                case "ENCRYPTFILE":
+                    if (arguments.Count < 1)
+                    {
+                        throw new Exception("Could not run EncryptFile command because no argument was provided for filePath.");
+                    }
+                    else if (arguments.Count > 1)
+                    {
+                        throw new Exception("Could not run EncryptFile command because too many arguments were provided.");
+                    }
+                    EncryptFileCommand(arguments[0]);
+                    break;
+                case "ENCRYPTDIRECTORY":
+                    if (arguments.Count < 1)
+                    {
+                        throw new Exception("Could not run EncryptDirectory command because no argument was provided for directoryPath.");
+                    }
+                    else if (arguments.Count > 1)
+                    {
+                        throw new Exception("Could not run EncryptDirectory command because too many arguments were provided.");
+                    }
+                    EncryptDirectoryCommand(arguments[0]);
+                    break;
+                case "DECRYPT":
+                    if (arguments.Count < 1)
+                    {
+                        throw new Exception("Could not run Decrypt command because no argument was provided for targetPath.");
+                    }
+                    else if (arguments.Count > 1)
+                    {
+                        throw new Exception("Could not run Decrypt command because too many arguments were provided.");
+                    }
+                    DecryptCommand(arguments[0]);
+                    break;
+                case "DECRYPTFILE":
+                    if (arguments.Count < 1)
+                    {
+                        throw new Exception("Could not run DecryptFile command because no argument was provided for filePath.");
+                    }
+                    else if (arguments.Count > 1)
+                    {
+                        throw new Exception("Could not run DecryptFile command because too many arguments were provided.");
+                    }
+                    DecryptFileCommand(arguments[0]);
+                    break;
+                case "DECRYPTDIRECTORY":
+                    if (arguments.Count < 1)
+                    {
+                        throw new Exception("Could not run DecryptDirectory command because no argument was provided for directoryPath.");
+                    }
+                    else if (arguments.Count > 1)
+                    {
+                        throw new Exception("Could not run DecryptDirectory command because too many arguments were provided.");
+                    }
+                    DecryptDirectoryCommand(arguments[0]);
                     break;
                 default:
                     throw new Exception($"No command exists with the name {commandName}");
@@ -141,524 +187,893 @@ namespace AESHelper
             {
                 throw new Exception($"Could not split command because source was null.");
             }
-            if (source == "")
+            else if (source == "")
             {
                 return new List<string>();
             }
-            try
-            {
-                List<string> output = new List<string>();
+            List<string> output = new List<string>();
 
-                string currentStatement = "";
-                bool inQuotes = false;
-                for (int i = 0; i < source.Length; i++)
-                {
-                    if (source[i] == '"')
-                    {
-                        if (currentStatement != "")
-                        {
-                            output.Add(currentStatement);
-                        }
-                        currentStatement = "";
-                        inQuotes = !inQuotes;
-                    }
-                    else if (source[i] == ' ' && !inQuotes)
-                    {
-                        if (currentStatement != "")
-                        {
-                            output.Add(currentStatement);
-                        }
-                        currentStatement = "";
-                    }
-                    else
-                    {
-                        currentStatement += source[i];
-                    }
-                }
-                if (currentStatement != "" && !(currentStatement is null))
-                {
-                    output.Add(currentStatement);
-                }
-
-                return output;
-            }
-            catch (Exception ex)
+            string currentStatement = "";
+            bool inQuotes = false;
+            for (int i = 0; i < source.Length; i++)
             {
-                throw new Exception($"Could not split command because of exception: {GetExceptionMessage(ex)}");
+                if (source[i] == '"')
+                {
+                    if (currentStatement != "")
+                    {
+                        output.Add(currentStatement);
+                    }
+                    currentStatement = "";
+                    inQuotes = !inQuotes;
+                }
+                else if (source[i] == ' ' && !inQuotes)
+                {
+                    if (currentStatement != "")
+                    {
+                        output.Add(currentStatement);
+                    }
+                    currentStatement = "";
+                }
+                else
+                {
+                    currentStatement += source[i];
+                }
             }
+            if (inQuotes)
+            {
+                throw new Exception("Could not split command because quotes were imbalanced.");
+            }
+            else if (currentStatement != "")
+            {
+                output.Add(currentStatement);
+            }
+            return output;
+        }
+        #endregion
+        #region Commands
+        public static void ShredCommand(string targetPath)
+        {
+            if (targetPath is null || targetPath == "")
+            {
+                throw new Exception("Could not run Shred command because targetPath is null or empty.");
+            }
+            else if (File.Exists(targetPath))
+            {
+                ShredFileCommand(targetPath);
+            }
+            else if (Directory.Exists(targetPath))
+            {
+                ShredDirectoryCommand(targetPath);
+            }
+            else
+            {
+                throw new Exception("Could not run Shred command because targetPath does not exist.");
+            }
+        }
+        public static void ShredFileCommand(string filePath)
+        {
+            if (filePath is null || filePath == "")
+            {
+                throw new Exception("Could not run ShredFile command because filePath is null or empty.");
+            }
+            else if (!File.Exists(filePath))
+            {
+                throw new Exception("Could not run ShredFile command because filePath does not exist.");
+            }
+            ShredFile(filePath, 3, ShreddingMethod.Random);
+        }
+        public static void ShredDirectoryCommand(string directoryPath)
+        {
+            if (directoryPath is null || directoryPath == "")
+            {
+                throw new Exception("Could not run ShredDirectory command because directoryPath is null or empty.");
+            }
+            else if (!Directory.Exists(directoryPath))
+            {
+                throw new Exception("Could not run ShredDirectory command because directoryPath does not exist.");
+            }
+            ShredDirectory(directoryPath, 3, ShreddingMethod.Random);
+        }
+        public static void EncryptCommand(string targetPath)
+        {
+            if (targetPath is null || targetPath == "")
+            {
+                throw new Exception("Could not run Encrypt command because targetPath is null or empty.");
+            }
+            else if (File.Exists(targetPath))
+            {
+                EncryptFileCommand(targetPath);
+            }
+            else if (Directory.Exists(targetPath))
+            {
+                EncryptDirectoryCommand(targetPath);
+            }
+            else
+            {
+                throw new Exception("Could not run Encrypt command because targetPath does not exist.");
+            }
+        }
+        public static void EncryptFileCommand(string filePath)
+        {
+            if (filePath is null || filePath == "")
+            {
+                throw new Exception("Could not run EncryptFile command because filePath is null or empty.");
+            }
+            else if (!File.Exists(filePath))
+            {
+                throw new Exception("Could not run EncryptFile command because filePath does not exist.");
+            }
+            string password = PromptForPasswordWithConfirmation();
+            byte[] passwordBytes = StringToBytes(password);
+            EncryptFile(filePath, passwordBytes);
+        }
+        public static void EncryptDirectoryCommand(string directoryPath)
+        {
+            if (directoryPath is null || directoryPath == "")
+            {
+                throw new Exception("Could not run EncryptDirectory command because directoryPath is null or empty.");
+            }
+            else if (!Directory.Exists(directoryPath))
+            {
+                throw new Exception("Could not run EncryptDirectory command because directoryPath does not exist.");
+            }
+            string password = PromptForPasswordWithConfirmation();
+            byte[] passwordBytes = StringToBytes(password);
+            EncryptDirectory(directoryPath, passwordBytes);
+        }
+        public static void DecryptCommand(string targetPath)
+        {
+            if (targetPath is null || targetPath == "")
+            {
+                throw new Exception("Could not run Decrypt command because targetPath is null or empty.");
+            }
+            else if (File.Exists(targetPath))
+            {
+                DecryptFileCommand(targetPath);
+            }
+            else if (Directory.Exists(targetPath))
+            {
+                DecryptDirectoryCommand(targetPath);
+            }
+            else
+            {
+                throw new Exception("Could not run Decrypt command because targetPath does not exist.");
+            }
+        }
+        public static void DecryptFileCommand(string filePath)
+        {
+            if (filePath is null || filePath == "")
+            {
+                throw new Exception("Could not run DecryptFile command because filePath is null or empty.");
+            }
+            else if (!File.Exists(filePath))
+            {
+                throw new Exception("Could not run DecryptFile command because filePath does not exist.");
+            }
+            AESHeader header = GetHeaderFromFile(filePath);
+            bool correctPassword = false;
+            byte[] passwordBytes = new byte[0];
+            while (!correctPassword)
+            {
+                passwordBytes = StringToBytes(PromptForPassword());
+                correctPassword = VerifyKey(header, passwordBytes);
+                if (!correctPassword)
+                {
+                    ShowMessage("The given password was incorrect. Please try again.");
+                }
+            }
+            DecryptFile(filePath, passwordBytes);
+        }
+        public static void DecryptDirectoryCommand(string directoryPath)
+        {
+            if (directoryPath is null || directoryPath == "")
+            {
+                throw new Exception("Could not run DecryptDirectory command because directoryPath is null or empty.");
+            }
+            else if (!Directory.Exists(directoryPath))
+            {
+                throw new Exception("Could not run DecryptDirectory command because directoryPath does not exist.");
+            }
+            string password = PromptForPassword();
+            byte[] passwordBytes = StringToBytes(password);
+            DecryptDirectory(directoryPath, passwordBytes);
         }
         #endregion
         #region Shredding
         public enum ShreddingMethod { Random, Ones, Zeros };
-        public static void ShredDirectory(string directoryPath, int passes = 3, ShreddingMethod method = ShreddingMethod.Random)
+        public static void ShredStream(Stream source, int passes = 3, ShreddingMethod method = ShreddingMethod.Random)
         {
-            if (directoryPath == null)
+            if (passes <= 0)
             {
-                throw new ArgumentException("Could not shred directory because directory path is null.");
+                throw new Exception("Could not shred stream because passes was less than or equal to 0.");
             }
-            if (!Directory.Exists(directoryPath))
+            else if (source is null)
             {
-                throw new ArgumentException("Could not shred directory because directory path does not exist.");
+                throw new Exception("Could not shred stream because source is null.");
             }
-            try
+            else if (!source.CanWrite)
             {
-                foreach (string subFolderPath in Directory.GetDirectories(directoryPath))
+                throw new Exception("Could not shred stream because source is not writable.");
+            }
+            else if (!source.CanSeek)
+            {
+                throw new Exception("Could not shred stream because stream does not support seeking.");
+            }
+            for (int p = 0; p < passes; p++)
+            {
+                source.Position = 0;
+                switch (method)
                 {
-                    ShredDirectory(subFolderPath, passes, method);
+                    case ShreddingMethod.Zeros:
+                        for (long i = 0; i < source.Length; i++)
+                        {
+                            source.WriteByte(byte.MinValue);
+                        }
+                        break;
+                    case ShreddingMethod.Ones:
+                        for (long i = 0; i < source.Length; i++)
+                        {
+                            source.WriteByte(byte.MaxValue);
+                        }
+                        break;
+                    case ShreddingMethod.Random:
+                        for (long i = 0; i < source.Length; i++)
+                        {
+                            source.WriteByte(RandomByte());
+                        }
+                        break;
+                    default:
+                        for (long i = 0; i < source.Length; i++)
+                        {
+                            source.WriteByte(RandomByte());
+                        }
+                        break;
                 }
-                foreach (string filePath in Directory.GetFiles(directoryPath))
-                {
-                    ShredFile(filePath, passes, method);
-                }
-                Directory.Delete(directoryPath);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not shred directory because of exception: {GetExceptionMessage(ex)}");
+                source.Flush();
             }
         }
         public static void ShredFile(string filePath, int passes = 3, ShreddingMethod method = ShreddingMethod.Random)
         {
-            if (filePath == null)
+            if (passes <= 0)
             {
-                throw new ArgumentException("Could not shred file because file path is null.");
+                throw new Exception("Could not shred stream because passes was less than or equal to 0.");
+            }
+            else if (filePath is null || filePath == "")
+            {
+                throw new Exception("Could not shred file because file path is null or empty.");
             }
             if (!File.Exists(filePath))
             {
-                throw new ArgumentException("Could not shred file because file path does not exist.");
+                throw new Exception("Could not shred file because file path does not exist.");
             }
-            try
-            {
-                int fileSize = File.ReadAllBytes(filePath).Length;
-                for (int p = 1; p <= passes; p++)
-                {
-                    byte[] buffer = new byte[fileSize];
-                    switch (method)
-                    {
-                        case ShreddingMethod.Zeros:
-                            for (int i = 0; i < buffer.Length; i++)
-                            {
-                                buffer[i] = byte.MinValue;
-                            }
-                            break;
-                        case ShreddingMethod.Ones:
-                            for (int i = 0; i < buffer.Length; i++)
-                            {
-                                buffer[i] = byte.MaxValue;
-                            }
-                            break;
-                        case ShreddingMethod.Random:
-                            buffer = RandomBytes(buffer.Length);
-                            break;
-                        default:
-                            buffer = RandomBytes(buffer.Length);
-                            break;
-                    }
-                    File.WriteAllBytes(filePath, buffer);
-                }
-                File.Delete(filePath);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not shred file because of exception: {GetExceptionMessage(ex)}");
-            }
+            FileStream fileStream = File.Open(filePath, FileMode.Open, FileAccess.Write);
+            ShredStream(fileStream, passes, method);
+            fileStream.Dispose();
+            File.Delete(filePath);
         }
-        #endregion
-        #region Hashing
-        public static byte[] Hash(byte[] data)
+        public static void ShredDirectory(string directoryPath, int passes = 3, ShreddingMethod method = ShreddingMethod.Random)
         {
-            if (data is null)
+            if (passes <= 0)
             {
-                throw new Exception("Could not hash data because data is null.");
+                throw new Exception("Could not shred directory because passes was less than or equal to 0.");
             }
-            try
+            else if (directoryPath is null || directoryPath == "")
             {
-                SHA256 hash = SHA256.Create();
-                byte[] output = hash.ComputeHash(data);
-                hash.Dispose();
-                return output;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not hash data because of exception: {GetExceptionMessage(ex)}");
-            }
-        }
-        public static byte[] HashAndSalt(byte[] data, byte[] salt)
-        {
-            if (data is null)
-            {
-                throw new Exception($"Could not hash and salt data because data is null.");
-            }
-            if (salt is null)
-            {
-                throw new Exception($"Could not hash and salt data because salt is null.");
-            }
-            try
-            {
-                return Hash(MergeArrays(data, salt));
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not hash and salt data because of exception: {GetExceptionMessage(ex)}");
-            }
-        }
-        #endregion
-        #region General AES
-        public enum DataType { File, Directory, Unknown };
-        public sealed class EncryptedData
-        {
-            public DataType dataType = DataType.Unknown;
-            public byte[] keySalt = new byte[32];
-            public byte[] hashedKey = new byte[32];
-            public byte[] IV = new byte[32];
-            public byte[] encryptedData = new byte[0];
-            private EncryptedData()
-            {
-                keySalt = new byte[32];
-                hashedKey = new byte[32];
-                IV = new byte[32];
-                encryptedData = new byte[0];
-            }
-            public EncryptedData(DataType dataType, byte[] keySalt, byte[] hashedKey, byte[] IV, byte[] encryptedData)
-            {
-                this.dataType = dataType;
-                this.keySalt = keySalt;
-                this.hashedKey = hashedKey;
-                this.IV = IV;
-                this.encryptedData = encryptedData;
-            }
-        }
-        public static bool VerifyKey(EncryptedData data, byte[] key)
-        {
-            if (data is null)
-            {
-                throw new NullReferenceException("Could not verify key because data is null.");
-            }
-            if (key is null)
-            {
-                throw new NullReferenceException("Could not verify key because key is null.");
-            }
-            try
-            {
-                byte[] givenLengthAdjustedKey = Hash(key);
-                byte[] givenHashedKey = HashAndSalt(givenLengthAdjustedKey, data.keySalt);
-                bool givenKeyCorrect = ArraysEqual(givenHashedKey, data.hashedKey);
-                return givenKeyCorrect;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could verify key because of exception: {GetExceptionMessage(ex)}");
-            }
-        }
-        #endregion
-        #region Encryption
-        public static void EncryptFile(string filePath)
-        {
-            if (filePath is null || filePath == "")
-            {
-                throw new NullReferenceException("Could not encrypt file beacuse file path is null.");
-            }
-            if (!File.Exists(filePath))
-            {
-                throw new Exception($"Could not encrypt file because file does not exist.");
-            }
-            string newFilePath = filePath + ".aes";
-            if (File.Exists(newFilePath))
-            {
-                throw new Exception($"Could not encrypt file because file already exists at new file path.");
-            }
-            try
-            {
-                byte[] decryptedData = File.ReadAllBytes(filePath);
-                string password = PromptForPasswordWithConfirmation();
-                byte[] passwordBytes = BinarySerializeString(password);
-                EncryptedData encryptedData = Encrypt(decryptedData, passwordBytes);
-                encryptedData.dataType = DataType.File;
-                string encryptedDataJson = JsonSerialize(encryptedData);
-                File.WriteAllText(newFilePath, encryptedDataJson);
-                ShredFile(filePath, 3, ShreddingMethod.Random);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not encrypt file because of exception: {GetExceptionMessage(ex)}");
-            }
-        }
-        public static void EncryptDirectory(string directoryPath)
-        {
-            if (directoryPath is null || directoryPath == "")
-            {
-                throw new NullReferenceException("Could not encrypt directory beacuse directory path is null.");
+                throw new Exception("Could not shred directory because directory path is null or empty.");
             }
             if (!Directory.Exists(directoryPath))
             {
-                throw new Exception($"Could not encrypt directory because directory path does not exist.");
+                throw new Exception("Could not shred directory because directory path does not exist.");
             }
-            string newFilePath = directoryPath + ".aes";
-            if (File.Exists(newFilePath))
+            foreach (string subDirectoryPath in Directory.GetDirectories(directoryPath))
             {
-                throw new Exception($"Could not encrypt directory because file already exists at new file path.");
+                ShredDirectory(subDirectoryPath, passes, method);
             }
-            string tempArchiveLocation = Path.GetTempFileName();
+            foreach (string subFilePath in Directory.GetFiles(directoryPath))
+            {
+                ShredFile(subFilePath, passes, method);
+            }
+            Directory.Delete(directoryPath);
+        }
+        #endregion
+        #region Hashing
+        public static byte[] HashStream(Stream source)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not hash stream because source is null.");
+            }
+            else if (!source.CanRead)
+            {
+                throw new Exception("Could not hash stream because source is not readable.");
+            }
+            else if (!source.CanSeek)
+            {
+                throw new Exception("Could not hash stream because source does not support seeking.");
+            }
+            SHA256 hash = SHA256.Create();
+            source.Position = 0;
+            byte[] output = hash.ComputeHash(source);
+            hash.Dispose();
+            return output;
+        }
+        public static byte[] HashBytes(byte[] source)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not hash bytes because source is null.");
+            }
+            MemoryStream sourceStream = new MemoryStream(source);
+            byte[] output = HashStream(sourceStream);
+            sourceStream.Dispose();
+            return output;
+        }
+        public static byte[] HashFile(string filePath)
+        {
+            if (filePath is null || filePath == "")
+            {
+                throw new Exception("Could not hash file beacuse file path is null or empty.");
+            }
+            if (!File.Exists(filePath))
+            {
+                throw new Exception($"Could not hash file because file path does not exist.");
+            }
+            FileStream fileStream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite);
+            byte[] output = HashStream(fileStream);
+            fileStream.Dispose();
+            return output;
+        }
+        #endregion
+        #region DataHeader
+        public static byte[] HeaderPrefix
+        {
+            get
+            {
+                return new byte[] { 69, 110, 99, 114, 121, 112, 116, 101, 100, 32, 119, 105, 116, 104, 32, 65, 69, 83, 72, 101, 108, 112, 101, 114 };
+            }
+        }
+        public sealed class AESHeader
+        {
+            private byte[] _keySalt = new byte[32];
+            public byte[] keySalt
+            {
+                get
+                {
+                    return CloneArray(_keySalt);
+                }
+                set
+                {
+                    if (value is null)
+                    {
+                        throw new Exception("Could not set keySalt because value was null.");
+                    }
+                    if (value.Length != 32)
+                    {
+                        throw new Exception("Could not set keySalt because value was the wrong length.");
+                    }
+                    _keySalt = value;
+                }
+            }
+            private byte[] _hashedKey = new byte[32];
+            public byte[] hashedKey
+            {
+                get
+                {
+                    return CloneArray(_hashedKey);
+                }
+                set
+                {
+                    if (value is null)
+                    {
+                        throw new Exception("Could not set hashedKey because value was null.");
+                    }
+                    if (value.Length != 32)
+                    {
+                        throw new Exception("Could not set hashedKey because value was the wrong length.");
+                    }
+                    _hashedKey = value;
+                }
+            }
+            private byte[] _IV = new byte[16];
+            public byte[] IV
+            {
+                get
+                {
+                    return CloneArray(_IV);
+                }
+                set
+                {
+                    if (value is null)
+                    {
+                        throw new Exception("Could not set IV because value was null.");
+                    }
+                    if (value.Length != 16)
+                    {
+                        throw new Exception("Could not set IV because value was the wrong length.");
+                    }
+                    _IV = value;
+                }
+            }
+            public AESHeader()
+            {
+                _keySalt = new byte[32];
+                _hashedKey = new byte[32];
+                _IV = new byte[16];
+            }
+            public AESHeader(byte[] keySalt, byte[] hashedKey, byte[] IV)
+            {
+                if (keySalt is null)
+                {
+                    throw new Exception("Could not create data header because keySalt is null.");
+                }
+                if (keySalt.Length != 32)
+                {
+                    throw new Exception("Could not create data header because keySalt was the wrong length.");
+                }
+                this.keySalt = keySalt;
+                if (hashedKey is null)
+                {
+                    throw new Exception("Could not create data header because hashedKey is null.");
+                }
+                if (keySalt.Length != 32)
+                {
+                    throw new Exception("Could not create data header because hashedKey was the wrong length.");
+                }
+                this.hashedKey = hashedKey;
+                if (IV is null)
+                {
+                    throw new Exception("Could not create data header because IV is null.");
+                }
+                if (IV.Length != 16)
+                {
+                    throw new Exception("Could not create data header because IV was the wrong length.");
+                }
+                this.IV = IV;
+            }
+        }
+        public static byte[] SerializeHeader(AESHeader source)
+        {
+            if (source is null)
+            {
+                throw new Exception($"Could not serialize header because source was null.");
+            }
+            byte[] output = new byte[0];
+            output = MergeArrays(output, HeaderPrefix);
+            output = MergeArrays(output, source.keySalt);
+            output = MergeArrays(output, source.hashedKey);
+            output = MergeArrays(output, source.IV);
+            return output;
+        }
+        public static AESHeader DeserializeHeader(byte[] source)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not deserialize header because source is null.");
+            }
+            else if (source.Length != 104)
+            {
+                throw new Exception("Could not deserialize header because keySalt was the wrong length.");
+            }
+            byte[] prefix = GetRangeFromArray(source, 0, 24);
+            if (!ArraysEqual(prefix, HeaderPrefix))
+            {
+                throw new Exception("Could not deserialize header because source is in the wrong format.");
+            }
+            AESHeader output = new AESHeader();
+            output.keySalt = GetRangeFromArray(source, 24, 32);
+            output.hashedKey = GetRangeFromArray(source, 56, 32);
+            output.IV = GetRangeFromArray(source, 88, 16);
+            return output;
+        }
+        public static bool VerifyKey(AESHeader header, byte[] key)
+        {
+            if (header is null)
+            {
+                throw new Exception("Count not verify key because header is null.");
+            }
+            else if (key is null)
+            {
+                throw new Exception("Could not verify key because key is null.");
+            }
+            byte[] lengthAdjustedKey = HashBytes(key);
+            byte[] hashedKey = HashBytes(MergeArrays(lengthAdjustedKey, header.keySalt));
+            return ArraysEqual(hashedKey, header.hashedKey);
+        }
+        public static AESHeader GenerateHeader(byte[] key)
+        {
+            byte[] lengthAdjustedKey = HashBytes(key);
+            byte[] keySalt = RandomBytes(32);
+            byte[] hashedKey = HashBytes(MergeArrays(lengthAdjustedKey, keySalt));
+            byte[] IV = RandomBytes(16);
+            AESHeader output = new AESHeader(keySalt, hashedKey, IV);
+            return output;
+        }
+        public static AESHeader GetHeaderFromStream(Stream source)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not get header from stream beacuse source is null.");
+            }
+            else if (!source.CanRead)
+            {
+                throw new Exception("Could not get header from stream beacuse source is unreadable.");
+            }
+            else if (!source.CanSeek)
+            {
+                throw new Exception("Could not get header from stream beacuse source does not support seeking.");
+            }
+            else if (source.Length < 104)
+            {
+                throw new Exception("Could not get header from stream beacuse source is too short.");
+            }
+            byte[] headerBytes = new byte[104];
+            source.Position = 0;
+            source.Read(headerBytes, 0, 104);
+            return DeserializeHeader(headerBytes);
+        }
+        public static AESHeader GetHeaderFromBytes(byte[] source)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not get header from bytes beacuse source is null.");
+            }
+            else if (source.Length < 104)
+            {
+                throw new Exception("Could not get header from bytes beacuse source is too short.");
+            }
+            byte[] headerBytes = GetRangeFromArray(source, 0, 104);
+            return DeserializeHeader(headerBytes);
+        }
+        public static AESHeader GetHeaderFromFile(string filePath)
+        {
+            if (filePath is null || filePath == "")
+            {
+                throw new Exception("Could not get header from file beacuse file path is null or empty.");
+            }
+            if (!File.Exists(filePath))
+            {
+                throw new Exception($"Could not get header from file because file path does not exist.");
+            }
+            FileStream fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+            AESHeader output = GetHeaderFromStream(fileStream);
+            fileStream.Dispose();
+            return output;
+        }
+        #endregion
+        #region Encryption
+        public static void EncryptStream(Stream source, Stream destination, byte[] key)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not encrypt stream beacuse source is null.");
+            }
+            else if (!source.CanRead)
+            {
+                throw new Exception("Could not encrypt stream beacuse source is unreadable.");
+            }
+            if (destination is null)
+            {
+                throw new Exception("Could not encrypt stream beacuse destination is null.");
+            }
+            else if (!destination.CanWrite)
+            {
+                throw new Exception("Could not encrypt stream beacuse destination is unwriteable.");
+            }
+            else if (key is null)
+            {
+                throw new Exception("Could not encrypt stream beacuse key is null.");
+            }
+            byte[] lengthAdjustedKey = HashBytes(key);
+
+            AESHeader header = GenerateHeader(key);
+
+            source.Position = 0;
+            destination.Position = 0;
+
+            byte[] headerBytes = SerializeHeader(header);
+
+            destination.Write(headerBytes, 0, headerBytes.Length);
+
+            Aes aes = Aes.Create();
+
+            aes.BlockSize = 128;
+            aes.IV = header.IV;
+
+            aes.KeySize = 256;
+            aes.Key = lengthAdjustedKey;
+
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.ISO10126;
+
+            ICryptoTransform decryptor = aes.CreateEncryptor();
+
+            CryptoStream cryptoStream = new CryptoStream(destination, decryptor, CryptoStreamMode.Write);
+
+            for (long i = 0; i < source.Length; i++)
+            {
+                cryptoStream.WriteByte((byte)source.ReadByte());
+            }
+
+            cryptoStream.FlushFinalBlock();
+            cryptoStream.Flush();
+            cryptoStream.Dispose();
+            decryptor.Dispose();
+            aes.Dispose();
+        }
+        public static byte[] EncryptBytes(byte[] source, byte[] key)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not encrypt bytes beacuse source is null.");
+            }
+            else if (key is null)
+            {
+                throw new Exception("Could not encrypt bytes beacuse key is null.");
+            }
+            MemoryStream sourceStream = new MemoryStream(source);
+            MemoryStream outputStream = new MemoryStream();
+            EncryptStream(sourceStream, outputStream, key);
+            sourceStream.Dispose();
+            byte[] output = outputStream.ToArray();
+            outputStream.Dispose();
+            return output;
+        }
+        public static void EncryptFile(string filePath, byte[] key)
+        {
+            if (filePath is null || filePath == "")
+            {
+                throw new Exception("Could not encrypt file beacuse file path is null or empty.");
+            }
+            else if (!File.Exists(filePath))
+            {
+                throw new Exception($"Could not encrypt file because file path does not exist.");
+            }
+            else if (key is null)
+            {
+                throw new Exception("Could not encrypt file because the key is null.");
+            }
+
+            string destinationFilePath = filePath + ".aes";
+            if (File.Exists(destinationFilePath))
+            {
+                throw new Exception($"Could not encrypt file because file already exists at destinationFilePath.");
+            }
             try
             {
-                File.Delete(tempArchiveLocation);
-                ZipFile.CreateFromDirectory(directoryPath, tempArchiveLocation);
-                byte[] decryptedData = File.ReadAllBytes(tempArchiveLocation);
-                ShredFile(tempArchiveLocation);
-                string password = PromptForPasswordWithConfirmation();
-                byte[] passwordBytes = BinarySerializeString(password);
-                EncryptedData encryptedData = Encrypt(decryptedData, passwordBytes);
-                encryptedData.dataType = DataType.Directory;
-                string encryptedDataJson = JsonSerialize(encryptedData);
-                File.WriteAllText(newFilePath, encryptedDataJson);
-                ShredDirectory(directoryPath, 3, ShreddingMethod.Random);
+                FileStream sourceFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+                FileStream destinationFileStream = File.Open(destinationFilePath, FileMode.Create, FileAccess.Write);
+                EncryptStream(sourceFileStream, destinationFileStream, key);
+                sourceFileStream.Dispose();
+                destinationFileStream.Dispose();
             }
             catch (Exception ex)
             {
                 try
                 {
-                    ShredFile(tempArchiveLocation);
+                    ShredFile(destinationFilePath);
                 }
                 catch
                 {
 
                 }
-                throw new Exception($"Could not encrypt directory because of exception: {GetExceptionMessage(ex)}");
-            }
-        }
-        public static EncryptedData Encrypt(byte[] data, byte[] key)
-        {
-            if (data is null)
-            {
-                throw new NullReferenceException("Could not encrypt data because the data is null.");
-            }
-            if (key is null)
-            {
-                throw new NullReferenceException("Could not encrypt data because the key is null.");
+                throw ex;
             }
             try
             {
-                byte[] lengthAdjustedKey = Hash(key);
-
-                byte[] keySalt = RandomBytes(32);
-
-                byte[] hashedKey = HashAndSalt(lengthAdjustedKey, keySalt);
-
-                byte[] IV = RandomBytes(16);
-
-                Aes aes = Aes.Create();
-
-                aes.BlockSize = 128;
-                aes.IV = IV;
-
-                aes.KeySize = 256;
-                aes.Key = lengthAdjustedKey;
-
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.ISO10126;
-
-                ICryptoTransform decryptor = aes.CreateEncryptor();
-                MemoryStream outputStream = new MemoryStream();
-                CryptoStream cryptoStream = new CryptoStream(outputStream, decryptor, CryptoStreamMode.Write);
-                cryptoStream.Write(data, 0, data.Length);
-                cryptoStream.FlushFinalBlock();
-
-                byte[] encryptedData = outputStream.ToArray();
-
-                cryptoStream.Close();
-                cryptoStream.Dispose();
-                outputStream.Close();
-                outputStream.Dispose();
-                decryptor.Dispose();
-                aes.Dispose();
-
-                return new EncryptedData(DataType.Unknown, keySalt, hashedKey, IV, encryptedData);
+                ShredFile(filePath);
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception($"Could not encrypt data because of exception: {GetExceptionMessage(ex)}");
+
+            }
+        }
+        public static void EncryptDirectory(string directoryPath, byte[] key)
+        {
+            if (directoryPath is null || directoryPath == "")
+            {
+                throw new Exception("Could not encrypt directory beacuse directory path is null or empty.");
+            }
+            else if (!Directory.Exists(directoryPath))
+            {
+                throw new Exception($"Could not encrypt directory because directory path does not exist.");
+            }
+            List<string> subFiles = new List<string>(Directory.GetFiles(directoryPath, "", SearchOption.AllDirectories));
+            for (int i = 0; i < subFiles.Count; i++)
+            {
+                if (Path.GetExtension(subFiles[i]).ToUpper() == ".AES")
+                {
+                    subFiles.RemoveAt(i);
+                    i--;
+                }
+            }
+            foreach (string subFile in subFiles)
+            {
+                try
+                {
+                    EncryptFile(subFile, key);
+                }
+                catch
+                {
+
+                }
             }
         }
         #endregion
         #region Decryption
-        public static void DecryptFile(string filePath)
+        public static void DecryptStream(Stream source, Stream destination, byte[] key)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not decrypt stream beacuse source is null.");
+            }
+            else if (!source.CanRead)
+            {
+                throw new Exception("Could not decrypt stream beacuse source is unreadable.");
+            }
+            else if (!source.CanSeek)
+            {
+                throw new Exception("Could not decrypt stream beacuse source does not support seeking.");
+            }
+            else if (destination is null)
+            {
+                throw new Exception("Could not decrypt stream beacuse destination is null.");
+            }
+            else if (!destination.CanWrite)
+            {
+                throw new Exception("Could not decrypt stream beacuse destination is unwriteable.");
+            }
+            else if (!destination.CanSeek)
+            {
+                throw new Exception("Could not decrypt stream beacuse destination does not support seeking.");
+            }
+            else if (key is null)
+            {
+                throw new Exception("Could not decrypt stream beacuse key is null.");
+            }
+            byte[] lengthAdjustedKey = HashBytes(key);
+
+            source.Position = 0;
+            destination.Position = 0;
+
+            AESHeader header = GetHeaderFromStream(source);
+
+            source.Position = 104;
+
+            Aes aes = Aes.Create();
+
+            aes.BlockSize = 128;
+            aes.IV = header.IV;
+
+            aes.KeySize = 256;
+            aes.Key = lengthAdjustedKey;
+
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.ISO10126;
+
+            ICryptoTransform decryptor = aes.CreateDecryptor();
+
+            CryptoStream cryptoStream = new CryptoStream(destination, decryptor, CryptoStreamMode.Write);
+
+            for (long i = 0; i < source.Length - 104; i++)
+            {
+                cryptoStream.WriteByte((byte)source.ReadByte());
+            }
+
+            cryptoStream.FlushFinalBlock();
+            cryptoStream.Flush();
+            cryptoStream.Dispose();
+            decryptor.Dispose();
+            aes.Dispose();
+        }
+        public static byte[] DecryptBytes(byte[] source, byte[] key)
+        {
+            if (source is null)
+            {
+                throw new Exception("Could not decrypt bytes beacuse source is null.");
+            }
+            else if (key is null)
+            {
+                throw new Exception("Could not decrypt bytes beacuse key is null.");
+            }
+            MemoryStream sourceStream = new MemoryStream(source);
+            MemoryStream outputStream = new MemoryStream();
+            DecryptStream(sourceStream, outputStream, key);
+            sourceStream.Dispose();
+            byte[] output = outputStream.ToArray();
+            outputStream.Dispose();
+            return output;
+        }
+        public static void DecryptFile(string filePath, byte[] key)
         {
             if (filePath is null || filePath == "")
             {
-                throw new Exception("Could not decrypt file because file path is null.");
+                throw new Exception("Could not decrypt file beacuse file path is null or empty.");
             }
-            if (!File.Exists(filePath))
+            else if (!File.Exists(filePath))
             {
                 throw new Exception($"Could not decrypt file because file path does not exist.");
             }
-            string fileContents;
+            else if (key is null)
+            {
+                throw new Exception("Could not decrypt file because the key is null.");
+            }
+            string destinationFilePath = filePath;
+            if (destinationFilePath.ToLower().EndsWith(".aes"))
+            {
+                destinationFilePath = destinationFilePath.Substring(0, filePath.Length - 4);
+            }
+            if (File.Exists(destinationFilePath))
+            {
+                throw new Exception($"Could not decrypt file because file already exists at destinationFilePath.");
+            }
             try
             {
-                fileContents = File.ReadAllText(filePath);
+                FileStream sourceFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+                FileStream destinationFileStream = File.Open(destinationFilePath, FileMode.Create, FileAccess.Write);
+                DecryptStream(sourceFileStream, destinationFileStream, key);
+                sourceFileStream.Dispose();
+                destinationFileStream.Dispose();
             }
             catch (Exception ex)
             {
-                throw new Exception($"Could not decrypt file because of exception: {GetExceptionMessage(ex)}");
+                try
+                {
+                    ShredFile(destinationFilePath);
+                }
+                catch
+                {
+
+                }
+                throw ex;
             }
-            EncryptedData encryptedData;
             try
             {
-                encryptedData = JsonDeserialize<EncryptedData>(fileContents);
+                ShredFile(filePath);
             }
             catch
             {
-                throw new Exception("Could not decrypt file because file does not follow the .aes format.");
-            }
-            byte[] decryptedData;
-            try
-            {
-                bool correctKey = false;
-                byte[] password = new byte[0];
-                while (!correctKey)
-                {
-                    password = BinarySerializeString(PromptForPassword());
-                    correctKey = VerifyKey(encryptedData, password);
-                    if (!correctKey)
-                    {
-                        if (MessageBox.Show("The given password was incorrect. Please try again.", "Incorrect Password", MessageBoxButtons.OKCancel) == DialogResult.Cancel)
-                        {
-                            throw new Exception("User chose to cancel the operation.");
-                        }
-                    }
-                }
 
-                decryptedData = DecryptData(encryptedData, password);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not decrypt file because of exception: {GetExceptionMessage(ex)}");
-            }
-            if (encryptedData.dataType == DataType.Directory)
-            {
-                string tempFilePath = Path.GetTempFileName();
-                string newDirectoryPath;
-                try
-                {
-                    File.WriteAllBytes(tempFilePath, decryptedData);
-                    newDirectoryPath = Path.GetDirectoryName(filePath) + "\\" + Path.GetFileNameWithoutExtension(filePath);
-                }
-                catch (Exception ex)
-                {
-                    try
-                    {
-                        ShredFile(tempFilePath);
-                    }
-                    catch
-                    {
-
-                    }
-                    throw new Exception($"Could not decrypt file because of exception: {GetExceptionMessage(ex)}");
-                }
-                if (Directory.Exists(newDirectoryPath))
-                {
-                    throw new Exception("Could not decrypt file because directory already exists at new directory path.");
-                }
-                try
-                {
-                    ZipFile.ExtractToDirectory(tempFilePath, newDirectoryPath);
-                    ShredFile(tempFilePath);
-                    ShredFile(filePath);
-                }
-                catch (Exception ex)
-                {
-                    try
-                    {
-                        ShredFile(tempFilePath);
-                    }
-                    catch
-                    {
-
-                    }
-                    throw new Exception($"Could not decrypt file because of exception: {GetExceptionMessage(ex)}");
-                }
-            }
-            else
-            {
-                string newFilePath = filePath;
-                try
-                {
-                    if (newFilePath.ToUpper().EndsWith(".AES"))
-                    {
-                        newFilePath = newFilePath.Substring(0, newFilePath.Length - 4);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Could not decrypt file because of exception: {GetExceptionMessage(ex)}");
-                }
-                if (File.Exists(newFilePath))
-                {
-                    throw new Exception("Could not decrypt file because file already exists at new file path.");
-                }
-                try
-                {
-                    File.WriteAllBytes(newFilePath, decryptedData);
-                    ShredFile(filePath, 3, ShreddingMethod.Random);
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Could not decrypt file because of exception: {GetExceptionMessage(ex)}");
-                }
             }
         }
-        public static byte[] DecryptData(EncryptedData data, byte[] key)
+        public static void DecryptDirectory(string directoryPath, byte[] key)
         {
-            if (data is null)
+            if (directoryPath is null || directoryPath == "")
             {
-                throw new NullReferenceException("Could not decrypt data because the data is null.");
+                throw new Exception("Could not decrypt directory beacuse directory path is null or empty.");
             }
-            if (key is null)
+            else if (!Directory.Exists(directoryPath))
             {
-                throw new NullReferenceException("Could not decrypt data because the key is null.");
+                throw new Exception($"Could not decrypt directory because directory path does not exist.");
             }
-            if (!VerifyKey(data, key))
+            List<string> subFiles = new List<string>(Directory.GetFiles(directoryPath, "", SearchOption.AllDirectories));
+            for (int i = 0; i < subFiles.Count; i++)
             {
-                throw new Exception("Could not decrypt data because the key was incorrect.");
+                if (Path.GetExtension(subFiles[i]).ToUpper() != ".AES")
+                {
+                    subFiles.RemoveAt(i);
+                    i--;
+                }
             }
-            try
+            foreach (string subFile in subFiles)
             {
-                byte[] lengthAdjustedKey = Hash(key);
+                try
+                {
+                    EncryptFile(subFile, key);
+                }
+                catch
+                {
 
-                Aes aes = Aes.Create();
-
-                aes.BlockSize = 128;
-                aes.IV = data.IV;
-
-                aes.KeySize = 256;
-                aes.Key = lengthAdjustedKey;
-
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.ISO10126;
-
-                ICryptoTransform decryptor = aes.CreateDecryptor();
-                MemoryStream outputStream = new MemoryStream();
-                CryptoStream cryptoStream = new CryptoStream(outputStream, decryptor, CryptoStreamMode.Write);
-                cryptoStream.Write(data.encryptedData, 0, data.encryptedData.Length);
-                cryptoStream.FlushFinalBlock();
-
-                byte[] output = outputStream.ToArray();
-
-                cryptoStream.Close();
-                cryptoStream.Dispose();
-                outputStream.Close();
-                outputStream.Dispose();
-                decryptor.Dispose();
-                aes.Dispose();
-
-                return output;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not decrypt data because of exception: {GetExceptionMessage(ex)}");
+                }
             }
         }
         #endregion
         #region Exception Logging
+        public static void HandleException(Exception ex)
+        {
+            LogException(ex);
+            ShowErrorMessage(ex);
+            Process.GetCurrentProcess().Kill();
+        }
         public static void LogException(Exception ex)
         {
             string exceptionLogEntry = GetExceptionLogEntry(ex);
@@ -681,15 +1096,6 @@ namespace AESHelper
             {
 
             }
-            try
-            {
-                MessageBox.Show($"{GetExceptionMessage(ex)}", "Exception Thrown", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            catch
-            {
-
-            }
-            Process.GetCurrentProcess().Kill();
         }
         public static string GetExceptionLogEntry(Exception ex)
         {
@@ -706,7 +1112,7 @@ namespace AESHelper
             string exceptionDateTime;
             try
             {
-                exceptionDateTime = $"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}";
+                exceptionDateTime = $"{DateTime.Now.ToString("MM/dd/yyyy HH:m:s")}";
             }
             catch
             {
@@ -716,74 +1122,71 @@ namespace AESHelper
         }
         public static string GetExceptionMessage(Exception ex)
         {
-            string output;
             try
             {
-                output = ex.Message;
-                output = output.Replace("\n", "");
-                output = output.Replace("\r", "");
-                output = output.Replace("\t", "");
+                return ex.Message;
             }
             catch
             {
-                output = "An unknown exception was thrown.";
+                return "An unknown exception was thrown.";
             }
-            return output;
         }
         #endregion
-        #region Password Prompts
-        public static string PromptForPassword()
+        #region PopUps
+        public static void ShowMessage(string message)
         {
-            string password;
+            if (message is null || message == "")
+            {
+                throw new Exception("Could not show message because message was null or empty.");
+            }
+            MessageBox.Show(message, "Message Box", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        public static void ShowErrorMessage(Exception ex)
+        {
             try
             {
-                password = Interaction.InputBox("Please enter your password below.", "Enter Password", "", -1, -1);
+                MessageBox.Show($"{GetExceptionMessage(ex)}", "Exception Thrown", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception($"Could not get password from user because of exception: {GetExceptionMessage(ex)}");
+
             }
+        }
+        public static string PromptForPassword()
+        {
+            string password = Interaction.InputBox("Please type your password below and press enter:", "Enter Password", "", -1, -1);
             if (password is null || password == "")
             {
                 throw new Exception($"Could not get password from user because user refused.");
             }
-            return password;
+            else
+            {
+                return password;
+            }
         }
         public static string PromptForPasswordWithConfirmation()
         {
-            string password;
-            try
+            while (true)
             {
-                while (true)
+                string password = Interaction.InputBox("Please type your password below and press enter:", "Enter Password", "", -1, -1);
+                if (password is null || password == "")
                 {
-                    password = Interaction.InputBox("Please enter your password below.", "Enter Password", "", -1, -1);
-                    if (password is null || password == "")
-                    {
-                        break;
-                    }
-                    string passwordConfirmation = Interaction.InputBox("Please confirm your password below.", "Confirm Password", "", -1, -1);
-                    if (passwordConfirmation == password)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        if (MessageBox.Show("Passwords does not match. Please try again.", "Non-matching Passwords", MessageBoxButtons.OKCancel) == DialogResult.Cancel)
-                        {
-                            throw new Exception($"Could not get password from user because user refused.");
-                        }
-                    }
+                    throw new Exception($"Could not get password from user because user refused.");
+                }
+                string passwordConfirmation = Interaction.InputBox("Please confirm your password below and press enter:", "Confirm Password", "", -1, -1);
+                if (passwordConfirmation is null || passwordConfirmation == "")
+                {
+                    throw new Exception($"Could not get password from user because user refused.");
+                }
+                else if (password == passwordConfirmation)
+                {
+                    return password;
+                }
+                else if (MessageBox.Show("Passwords do not match. Please try again.", "Non-matching Passwords", MessageBoxButtons.OKCancel) == DialogResult.Cancel)
+                {
+                    throw new Exception($"Could not get password from user because user refused.");
                 }
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not get password from user because of exception: {GetExceptionMessage(ex)}");
-            }
-            if (password is null || password == "")
-            {
-                throw new Exception($"Could not get password from user because user refused.");
-            }
-            return password;
         }
         #endregion
         #region Array Opperations
@@ -791,63 +1194,46 @@ namespace AESHelper
         {
             if (arrayA is null)
             {
-                throw new NullReferenceException("Could not merge arrays because array A is null.");
+                throw new Exception("Could not merge arrays because arrayA is null.");
             }
-            if (arrayB is null)
+            else if (arrayB is null)
             {
-                throw new NullReferenceException("Could not merge arrays because array B is null.");
+                throw new Exception("Could not merge arrays because arrayB is null.");
             }
-            try
+            else if (arrayA.Length == 0)
             {
-                if (arrayA.Length == 0)
-                {
-                    return arrayB;
-                }
-                else if (arrayB.Length == 0)
-                {
-                    return arrayA;
-                }
-                else
-                {
-                    T[] output = new T[arrayA.Length + arrayB.Length];
-                    Array.Copy(arrayA, 0, output, 0, arrayA.Length);
-                    Array.Copy(arrayB, 0, output, arrayA.Length, arrayB.Length);
-                    return output;
-                }
+                return arrayB;
             }
-            catch (Exception ex)
+            else if (arrayB.Length == 0)
             {
-                throw new Exception($"Could not merge arrays because of exception: {GetExceptionMessage(ex)}");
+                return arrayA;
             }
+            T[] output = new T[arrayA.Length + arrayB.Length];
+            Array.Copy(arrayA, 0, output, 0, arrayA.Length);
+            Array.Copy(arrayB, 0, output, arrayA.Length, arrayB.Length);
+            return output;
         }
-        public static T[] GetRangeFromArray<T>(T[] array, int startIndex, int length)
+        public static T[] GetRangeFromArray<T>(T[] source, int startIndex, int length)
         {
-            if (array is null)
+            if (source is null)
             {
-                throw new NullReferenceException("Could not get range from array because array is null.");
+                throw new Exception("Could not get range from array because source is null.");
             }
-            if (startIndex < 0 || startIndex >= array.Length)
+            else if (startIndex < 0 || startIndex >= source.Length)
             {
-                throw new Exception("Could not get range from array because start index was outside the bounds of the array.");
+                throw new Exception("Could not get range from array because startIndex was outside the bounds of the array.");
             }
-            if (length < 0)
+            else if (length <= 0)
             {
-                throw new ArgumentException("Could not get range from array because length was negative.");
+                throw new Exception("Could not get range from array because length was less than or equal to 0.");
             }
-            if (array.Length < startIndex + length)
+            else if (source.Length < startIndex + length)
             {
                 throw new Exception("Could not get range from array because the specified range was too large to fit within the bounds of the array.");
             }
-            try
-            {
-                T[] output = new T[length];
-                Array.Copy(array, startIndex, output, 0, length);
-                return output;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not get range from array because of exception: {GetExceptionMessage(ex)}");
-            }
+            T[] output = new T[length];
+            Array.Copy(source, startIndex, output, 0, length);
+            return output;
         }
         public static bool ArraysEqual<T>(T[] arrayA, T[] arrayB)
         {
@@ -863,114 +1249,74 @@ namespace AESHelper
             {
                 return false;
             }
-            try
+            for (int i = 0; i < arrayA.Length; i++)
             {
-                for (int i = 0; i < arrayA.Length; i++)
+                if (!arrayA[i].Equals(arrayB[i]))
                 {
-                    if (!arrayA[i].Equals(arrayB[i]))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
-
-                return true;
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not determine if arrays were equal because of exception: {GetExceptionMessage(ex)}");
-            }
+            return true;
         }
-        public static T[] CloneArray<T>(T[] array)
-        {
-            if (array is null)
-            {
-                throw new NullReferenceException("Could not clone array because the array is null.");
-            }
-            try
-            {
-                T[] output = new T[array.Length];
-                for (int i = 0; i < array.Length; i++)
-                {
-                    output[i] = array[i];
-                }
-                return output;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not clone array because of exception: {GetExceptionMessage(ex)}");
-            }
-        }
-        #endregion
-        #region Serialization
-        public static byte[] BinarySerializeString(string source)
+        public static T[] CloneArray<T>(T[] source)
         {
             if (source is null)
             {
-                throw new Exception("Could not binary serialize string because the source string is null.");
+                return null;
             }
-            try
-            {
-                return Encoding.Unicode.GetBytes(source);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not binary serialize string because of exception: {GetExceptionMessage(ex)}");
-            }
+            T[] output = new T[source.Length];
+            Array.Copy(source, 0, output, 0, source.Length);
+            return output;
         }
-        public static string BinaryDeserializeString(byte[] source)
+        #endregion
+        #region String Encoding
+        public static byte[] StringToBytes(string source)
         {
             if (source is null)
             {
-                throw new Exception("Could not binary deserialize string because the source byte array is null.");
+                throw new Exception("Could not convert string to bytes because source is null.");
             }
-            try
+            else if (source == "")
             {
-                return Encoding.Unicode.GetString(source);
+                return new byte[0];
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not binary deserialize string because of exception: {GetExceptionMessage(ex)}");
-            }
+            return Encoding.Unicode.GetBytes(source);
         }
-        public static string JsonSerialize(object source)
+        public static string BytesToString(byte[] source)
         {
-            try
+            if (source is null)
             {
-                return JsonConvert.SerializeObject(source);
+                throw new Exception("Could not convert bytes to string because source is null.");
             }
-            catch (Exception ex)
+            else if (source.Length == 0)
             {
-                throw new Exception($"Could not json serialize object because of exception: {GetExceptionMessage(ex)}");
+                return "";
             }
-        }
-        public static T JsonDeserialize<T>(string source)
-        {
-            try
-            {
-                return JsonConvert.DeserializeObject<T>(source);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not json deserialize string because of exception: {GetExceptionMessage(ex)}");
-            }
+            return Encoding.Unicode.GetString(source);
         }
         #endregion
+        #region Random Bytes
+        public static readonly Random RNG = new Random();
+        public static byte RandomByte()
+        {
+            byte[] buffer = new byte[1];
+            RNG.NextBytes(buffer);
+            return buffer[0];
+        }
         public static byte[] RandomBytes(int bufferSize)
         {
             if (bufferSize < 0)
             {
-                throw new Exception("Could not get random bytes because the buffer size was less than zero.");
+                throw new Exception("Could not get random bytes because the bufferSize was less than zero.");
             }
-            try
+            else if (bufferSize == 0)
             {
-                byte[] buffer = new byte[bufferSize];
-                RNG.NextBytes(buffer); ;
-                return buffer;
+                return new byte[0];
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Could not get random bytes because of exception: {GetExceptionMessage(ex)}");
-            }
+            byte[] buffer = new byte[bufferSize];
+            RNG.NextBytes(buffer);
+            return buffer;
         }
+        #endregion
     }
 }

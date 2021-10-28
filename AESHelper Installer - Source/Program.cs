@@ -41,9 +41,16 @@ namespace AESHelper.Installer
                     {
                         MessageBox.Show($"AESHelper could not be installed due to exception: {ex.Message}!", "Install Failed!", MessageBoxButtons.OK);
                         MessageBox.Show($"Attempting to undo changes!", "Undoing Changes!", MessageBoxButtons.OK);
-                        Uninstall();
-                        MessageBox.Show($"Changes were successfully undone!", "Undo Successful!", MessageBoxButtons.OK);
-                        Process.GetCurrentProcess().Kill();
+                        try
+                        {
+                            Uninstall();
+                            MessageBox.Show($"Changes were successfully undone!", "Undo Successful!", MessageBoxButtons.OK);
+                            Process.GetCurrentProcess().Kill();
+                        }
+                        catch (Exception ex2)
+                        {
+                            MessageBox.Show($"Changes could not be undone due to exception: {ex2.Message}!", "Undo Failed!", MessageBoxButtons.OK);
+                        }
                     }
                 }
                 else
@@ -67,7 +74,6 @@ namespace AESHelper.Installer
             File.WriteAllBytes(payloadTempFilePath, payloadBytes);
             ZipFile.ExtractToDirectory(payloadTempFilePath, @"C:\Program Files\AESHelper");
             File.Delete(payloadTempFilePath);
-
             RegistryKey root = Registry.ClassesRoot;
             //Open .AES files
             RegistryKey DotAES = root.CreateSubKey(".aes", true);
@@ -93,6 +99,24 @@ namespace AESHelper.Installer
             StarShellAESHelperEncryptFileCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""EncryptFile"" ""%1""");
             StarShellAESHelperEncryptFileCommand.Dispose();
             StarShellAESHelperEncryptFile.Dispose();
+            //Decrypt File Context Menu
+            RegistryKey StarShellAESHelperDecryptFile = StarShell.CreateSubKey("AESHelper.DecryptFile", true);
+            StarShellAESHelperDecryptFile.SetValue(null, "AES Decrypt File");
+            StarShellAESHelperDecryptFile.SetValue("Icon", @"C:\Program Files\AESHelper\AESHelper.exe");
+            RegistryKey StarShellAESHelperDecryptFileCommand = StarShellAESHelperDecryptFile.CreateSubKey("command", true);
+            StarShellAESHelperDecryptFileCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""DecryptFile"" ""%1""");
+            StarShellAESHelperDecryptFileCommand.Dispose();
+            StarShellAESHelperDecryptFile.Dispose();
+            //Shred File Context Menu
+            RegistryKey StarShellAESHelperShredFile = StarShell.CreateSubKey("AESHelper.ShredFile", true);
+            StarShellAESHelperShredFile.SetValue(null, "AES Shred File");
+            StarShellAESHelperShredFile.SetValue("Icon", @"C:\Program Files\AESHelper\AESHelper.exe");
+            RegistryKey StarShellAESHelperShredFileCommand = StarShellAESHelperShredFile.CreateSubKey("command", true);
+            StarShellAESHelperShredFileCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""ShredFile"" ""%1""");
+            StarShellAESHelperShredFileCommand.Dispose();
+            StarShellAESHelperShredFile.Dispose();
+            StarShell.Dispose();
+            Star.Dispose();
             //Encrypt Directory Context Menu
             RegistryKey DirectoryKey = root.OpenSubKey("Directory", true);
             RegistryKey DirectoryShell = DirectoryKey.OpenSubKey("shell", true);
@@ -103,6 +127,14 @@ namespace AESHelper.Installer
             DirectoryShellAESHelperEncryptDirectoryCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""EncryptDirectory"" ""%1""");
             DirectoryShellAESHelperEncryptDirectoryCommand.Dispose();
             DirectoryShellAESHelperEncryptDirectory.Dispose();
+            //Shred Directory Context Menu
+            RegistryKey DirectoryShellAESHelperShredDirectory = DirectoryShell.CreateSubKey("AESHelper.ShredDirectory", true);
+            DirectoryShellAESHelperShredDirectory.SetValue(null, "AES Shred Directory");
+            DirectoryShellAESHelperShredDirectory.SetValue("Icon", @"C:\Program Files\AESHelper\AESHelper.exe");
+            RegistryKey DirectoryShellAESHelperShredDirectoryCommand = DirectoryShellAESHelperShredDirectory.CreateSubKey("command", true);
+            DirectoryShellAESHelperShredDirectoryCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""ShredDirectory"" ""%1""");
+            DirectoryShellAESHelperShredDirectoryCommand.Dispose();
+            DirectoryShellAESHelperShredDirectory.Dispose();
             DirectoryShell.Dispose();
             DirectoryKey.Dispose();
             root.Dispose();
@@ -116,6 +148,10 @@ namespace AESHelper.Installer
                 newPathValue += pathSubValue + ";";
             }
             Environment.SetEnvironmentVariable("PATH", newPathValue, EnvironmentVariableTarget.Machine);
+        }
+        public static void InstallRegistries()
+        {
+
         }
         public static void Uninstall()
         {
@@ -150,7 +186,9 @@ namespace AESHelper.Installer
                 {
                     RegistryKey Star = root.OpenSubKey("*", true);
                     RegistryKey StarShell = Star.OpenSubKey("shell", true);
-                    StarShell.DeleteSubKeyTree("AESHelper.DecryptFile");
+                    StarShell.DeleteSubKeyTree("AESHelper.EncryptFile", false);
+                    StarShell.DeleteSubKeyTree("AESHelper.DecryptFile", false);
+                    StarShell.DeleteSubKeyTree("AESHelper.ShredFile", false);
                     StarShell.Dispose();
                     Star.Dispose();
                 }
@@ -162,7 +200,8 @@ namespace AESHelper.Installer
                 {
                     RegistryKey DirectoryKey = root.OpenSubKey("Directory", true);
                     RegistryKey DirectoryShell = DirectoryKey.OpenSubKey("shell", true);
-                    DirectoryShell.DeleteSubKeyTree("AESHelper.EncryptDirectory");
+                    DirectoryShell.DeleteSubKeyTree("AESHelper.EncryptDirectory", false);
+                    DirectoryShell.DeleteSubKeyTree("AESHelper.ShredDirectory", false);
                     DirectoryShell.Dispose();
                     DirectoryKey.Dispose();
                 }
@@ -199,6 +238,10 @@ namespace AESHelper.Installer
             {
 
             }
+        }
+        public static void UninstallRegistries()
+        {
+
         }
     }
 }
