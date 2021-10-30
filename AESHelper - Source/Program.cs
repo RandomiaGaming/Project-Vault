@@ -7,6 +7,8 @@ using Microsoft.VisualBasic;
 using System.Windows.Forms;
 using System.Text;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Drawing;
 
 namespace AESHelper
 {
@@ -252,26 +254,10 @@ namespace AESHelper
         }
         public static void ShredFileCommand(string filePath)
         {
-            if (filePath is null || filePath == "")
-            {
-                throw new Exception("Could not run ShredFile command because filePath is null or empty.");
-            }
-            else if (!File.Exists(filePath))
-            {
-                throw new Exception("Could not run ShredFile command because filePath does not exist.");
-            }
             ShredFile(filePath, 3, ShreddingMethod.Random);
         }
         public static void ShredDirectoryCommand(string directoryPath)
         {
-            if (directoryPath is null || directoryPath == "")
-            {
-                throw new Exception("Could not run ShredDirectory command because directoryPath is null or empty.");
-            }
-            else if (!Directory.Exists(directoryPath))
-            {
-                throw new Exception("Could not run ShredDirectory command because directoryPath does not exist.");
-            }
             ShredDirectory(directoryPath, 3, ShreddingMethod.Random);
         }
         public static void EncryptCommand(string targetPath)
@@ -359,7 +345,10 @@ namespace AESHelper
                 correctPassword = VerifyKey(header, passwordBytes);
                 if (!correctPassword)
                 {
-                    ShowMessage("The given password was incorrect. Please try again.");
+                    if (MessageBox.Show("Password is incorrect. Please try again.", "Incorrect Password", MessageBoxButtons.OKCancel) == DialogResult.Cancel)
+                    {
+                        KillProcess();
+                    }
                 }
             }
             DecryptFile(filePath, passwordBytes);
@@ -398,6 +387,10 @@ namespace AESHelper
             else if (!source.CanSeek)
             {
                 throw new Exception("Could not shred stream because stream does not support seeking.");
+            }
+            else if (source.Length == 0)
+            {
+                return;
             }
             for (int p = 0; p < passes; p++)
             {
@@ -524,17 +517,14 @@ namespace AESHelper
             return output;
         }
         #endregion
-        #region DataHeader
-        public static byte[] HeaderPrefix
-        {
-            get
-            {
-                return new byte[] { 69, 110, 99, 114, 121, 112, 116, 101, 100, 32, 119, 105, 116, 104, 32, 65, 69, 83, 72, 101, 108, 112, 101, 114 };
-            }
-        }
+        #region AESHeader
+        public const int KeySaltLength = 32;
+        public const int HashedKeyLength = 32;
+        public const int IVLength = 16;
+        public const int HeaderLength = 32 + 32 + 16;
         public sealed class AESHeader
         {
-            private byte[] _keySalt = new byte[32];
+            private byte[] _keySalt = new byte[KeySaltLength];
             public byte[] keySalt
             {
                 get
@@ -547,14 +537,14 @@ namespace AESHelper
                     {
                         throw new Exception("Could not set keySalt because value was null.");
                     }
-                    if (value.Length != 32)
+                    if (value.Length != KeySaltLength)
                     {
                         throw new Exception("Could not set keySalt because value was the wrong length.");
                     }
                     _keySalt = value;
                 }
             }
-            private byte[] _hashedKey = new byte[32];
+            private byte[] _hashedKey = new byte[HashedKeyLength];
             public byte[] hashedKey
             {
                 get
@@ -567,14 +557,14 @@ namespace AESHelper
                     {
                         throw new Exception("Could not set hashedKey because value was null.");
                     }
-                    if (value.Length != 32)
+                    if (value.Length != HashedKeyLength)
                     {
                         throw new Exception("Could not set hashedKey because value was the wrong length.");
                     }
                     _hashedKey = value;
                 }
             }
-            private byte[] _IV = new byte[16];
+            private byte[] _IV = new byte[IVLength];
             public byte[] IV
             {
                 get
@@ -587,7 +577,7 @@ namespace AESHelper
                     {
                         throw new Exception("Could not set IV because value was null.");
                     }
-                    if (value.Length != 16)
+                    if (value.Length != IVLength)
                     {
                         throw new Exception("Could not set IV because value was the wrong length.");
                     }
@@ -596,9 +586,9 @@ namespace AESHelper
             }
             public AESHeader()
             {
-                _keySalt = new byte[32];
-                _hashedKey = new byte[32];
-                _IV = new byte[16];
+                _keySalt = new byte[KeySaltLength];
+                _hashedKey = new byte[HashedKeyLength];
+                _IV = new byte[IVLength];
             }
             public AESHeader(byte[] keySalt, byte[] hashedKey, byte[] IV)
             {
@@ -606,7 +596,7 @@ namespace AESHelper
                 {
                     throw new Exception("Could not create data header because keySalt is null.");
                 }
-                if (keySalt.Length != 32)
+                if (keySalt.Length != KeySaltLength)
                 {
                     throw new Exception("Could not create data header because keySalt was the wrong length.");
                 }
@@ -615,7 +605,7 @@ namespace AESHelper
                 {
                     throw new Exception("Could not create data header because hashedKey is null.");
                 }
-                if (keySalt.Length != 32)
+                if (hashedKey.Length != HashedKeyLength)
                 {
                     throw new Exception("Could not create data header because hashedKey was the wrong length.");
                 }
@@ -624,7 +614,7 @@ namespace AESHelper
                 {
                     throw new Exception("Could not create data header because IV is null.");
                 }
-                if (IV.Length != 16)
+                if (IV.Length != IVLength)
                 {
                     throw new Exception("Could not create data header because IV was the wrong length.");
                 }
@@ -637,9 +627,7 @@ namespace AESHelper
             {
                 throw new Exception($"Could not serialize header because source was null.");
             }
-            byte[] output = new byte[0];
-            output = MergeArrays(output, HeaderPrefix);
-            output = MergeArrays(output, source.keySalt);
+            byte[] output = CloneArray(source.keySalt);
             output = MergeArrays(output, source.hashedKey);
             output = MergeArrays(output, source.IV);
             return output;
@@ -650,19 +638,14 @@ namespace AESHelper
             {
                 throw new Exception("Could not deserialize header because source is null.");
             }
-            else if (source.Length != 104)
+            else if (source.Length != HeaderLength)
             {
                 throw new Exception("Could not deserialize header because keySalt was the wrong length.");
             }
-            byte[] prefix = GetRangeFromArray(source, 0, 24);
-            if (!ArraysEqual(prefix, HeaderPrefix))
-            {
-                throw new Exception("Could not deserialize header because source is in the wrong format.");
-            }
             AESHeader output = new AESHeader();
-            output.keySalt = GetRangeFromArray(source, 24, 32);
-            output.hashedKey = GetRangeFromArray(source, 56, 32);
-            output.IV = GetRangeFromArray(source, 88, 16);
+            output.keySalt = GetRangeFromArray(source, 0, KeySaltLength);
+            output.hashedKey = GetRangeFromArray(source, KeySaltLength, HashedKeyLength);
+            output.IV = GetRangeFromArray(source, KeySaltLength + HashedKeyLength, IVLength);
             return output;
         }
         public static bool VerifyKey(AESHeader header, byte[] key)
@@ -682,9 +665,9 @@ namespace AESHelper
         public static AESHeader GenerateHeader(byte[] key)
         {
             byte[] lengthAdjustedKey = HashBytes(key);
-            byte[] keySalt = RandomBytes(32);
+            byte[] keySalt = RandomBytes(KeySaltLength);
             byte[] hashedKey = HashBytes(MergeArrays(lengthAdjustedKey, keySalt));
-            byte[] IV = RandomBytes(16);
+            byte[] IV = RandomBytes(IVLength);
             AESHeader output = new AESHeader(keySalt, hashedKey, IV);
             return output;
         }
@@ -702,13 +685,13 @@ namespace AESHelper
             {
                 throw new Exception("Could not get header from stream beacuse source does not support seeking.");
             }
-            else if (source.Length < 104)
+            else if (source.Length < HeaderLength)
             {
                 throw new Exception("Could not get header from stream beacuse source is too short.");
             }
-            byte[] headerBytes = new byte[104];
+            byte[] headerBytes = new byte[HeaderLength];
             source.Position = 0;
-            source.Read(headerBytes, 0, 104);
+            source.Read(headerBytes, 0, HeaderLength);
             return DeserializeHeader(headerBytes);
         }
         public static AESHeader GetHeaderFromBytes(byte[] source)
@@ -717,11 +700,11 @@ namespace AESHelper
             {
                 throw new Exception("Could not get header from bytes beacuse source is null.");
             }
-            else if (source.Length < 104)
+            else if (source.Length < HeaderLength)
             {
                 throw new Exception("Could not get header from bytes beacuse source is too short.");
             }
-            byte[] headerBytes = GetRangeFromArray(source, 0, 104);
+            byte[] headerBytes = GetRangeFromArray(source, 0, HeaderLength);
             return DeserializeHeader(headerBytes);
         }
         public static AESHeader GetHeaderFromFile(string filePath)
@@ -730,11 +713,15 @@ namespace AESHelper
             {
                 throw new Exception("Could not get header from file beacuse file path is null or empty.");
             }
-            if (!File.Exists(filePath))
+            else if (!File.Exists(filePath))
             {
                 throw new Exception($"Could not get header from file because file path does not exist.");
             }
             FileStream fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+            if (fileStream.Length < HeaderLength)
+            {
+                throw new Exception("Could not get header from stream beacuse file is too small.");
+            }
             AESHeader output = GetHeaderFromStream(fileStream);
             fileStream.Dispose();
             return output;
@@ -877,7 +864,7 @@ namespace AESHelper
             {
                 throw new Exception($"Could not encrypt directory because directory path does not exist.");
             }
-            List<string> subFiles = new List<string>(Directory.GetFiles(directoryPath, "", SearchOption.AllDirectories));
+            List<string> subFiles = new List<string>(Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories));
             for (int i = 0; i < subFiles.Count; i++)
             {
                 if (Path.GetExtension(subFiles[i]).ToUpper() == ".AES")
@@ -937,7 +924,12 @@ namespace AESHelper
 
             AESHeader header = GetHeaderFromStream(source);
 
-            source.Position = 104;
+            if(!VerifyKey(header, key))
+            {
+                throw new Exception("Could not decrypt stream because key was incorrect.");
+            }
+
+            source.Position = HeaderLength;
 
             Aes aes = Aes.Create();
 
@@ -954,7 +946,7 @@ namespace AESHelper
 
             CryptoStream cryptoStream = new CryptoStream(destination, decryptor, CryptoStreamMode.Write);
 
-            for (long i = 0; i < source.Length - 104; i++)
+            for (long i = 0; i < source.Length - HeaderLength; i++)
             {
                 cryptoStream.WriteByte((byte)source.ReadByte());
             }
@@ -1045,7 +1037,7 @@ namespace AESHelper
             {
                 throw new Exception($"Could not decrypt directory because directory path does not exist.");
             }
-            List<string> subFiles = new List<string>(Directory.GetFiles(directoryPath, "", SearchOption.AllDirectories));
+            List<string> subFiles = new List<string>(Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories));
             for (int i = 0; i < subFiles.Count; i++)
             {
                 if (Path.GetExtension(subFiles[i]).ToUpper() != ".AES")
@@ -1058,7 +1050,7 @@ namespace AESHelper
             {
                 try
                 {
-                    EncryptFile(subFile, key);
+                    DecryptFile(subFile, key);
                 }
                 catch
                 {
@@ -1133,14 +1125,6 @@ namespace AESHelper
         }
         #endregion
         #region PopUps
-        public static void ShowMessage(string message)
-        {
-            if (message is null || message == "")
-            {
-                throw new Exception("Could not show message because message was null or empty.");
-            }
-            MessageBox.Show(message, "Message Box", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
         public static void ShowErrorMessage(Exception ex)
         {
             try
@@ -1157,7 +1141,8 @@ namespace AESHelper
             string password = Interaction.InputBox("Please type your password below and press enter:", "Enter Password", "", -1, -1);
             if (password is null || password == "")
             {
-                throw new Exception($"Could not get password from user because user refused.");
+                KillProcess();
+                return "";
             }
             else
             {
@@ -1171,12 +1156,12 @@ namespace AESHelper
                 string password = Interaction.InputBox("Please type your password below and press enter:", "Enter Password", "", -1, -1);
                 if (password is null || password == "")
                 {
-                    throw new Exception($"Could not get password from user because user refused.");
+                    KillProcess();
                 }
                 string passwordConfirmation = Interaction.InputBox("Please confirm your password below and press enter:", "Confirm Password", "", -1, -1);
                 if (passwordConfirmation is null || passwordConfirmation == "")
                 {
-                    throw new Exception($"Could not get password from user because user refused.");
+                    KillProcess();
                 }
                 else if (password == passwordConfirmation)
                 {
@@ -1184,7 +1169,7 @@ namespace AESHelper
                 }
                 else if (MessageBox.Show("Passwords do not match. Please try again.", "Non-matching Passwords", MessageBoxButtons.OKCancel) == DialogResult.Cancel)
                 {
-                    throw new Exception($"Could not get password from user because user refused.");
+                    KillProcess();
                 }
             }
         }
@@ -1318,5 +1303,14 @@ namespace AESHelper
             return buffer;
         }
         #endregion
+        public static void KillProcess()
+        {
+            //Kill the current process and then keep the thread busy waiting forever to ensure no further instructions are executed.
+            Process.GetCurrentProcess().Kill();
+            while (true)
+            {
+                Thread.Sleep(int.MaxValue);
+            }
+        }
     }
 }

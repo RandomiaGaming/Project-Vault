@@ -127,6 +127,14 @@ namespace AESHelper.Installer
             DirectoryShellAESHelperEncryptDirectoryCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""EncryptDirectory"" ""%1""");
             DirectoryShellAESHelperEncryptDirectoryCommand.Dispose();
             DirectoryShellAESHelperEncryptDirectory.Dispose();
+            //Decrypt Directory Context Menu
+            RegistryKey DirectoryShellAESHelperDecryptDirectory = DirectoryShell.CreateSubKey("AESHelper.DecryptDirectory", true);
+            DirectoryShellAESHelperDecryptDirectory.SetValue(null, "AES Decrypt Directory");
+            DirectoryShellAESHelperDecryptDirectory.SetValue("Icon", @"C:\Program Files\AESHelper\AESHelper.exe");
+            RegistryKey DirectoryShellAESHelperDecryptDirectoryCommand = DirectoryShellAESHelperDecryptDirectory.CreateSubKey("command", true);
+            DirectoryShellAESHelperDecryptDirectoryCommand.SetValue(null, @"""C:\Program Files\AESHelper\AESHelper.exe"" ""DecryptDirectory"" ""%1""");
+            DirectoryShellAESHelperDecryptDirectoryCommand.Dispose();
+            DirectoryShellAESHelperDecryptDirectory.Dispose();
             //Shred Directory Context Menu
             RegistryKey DirectoryShellAESHelperShredDirectory = DirectoryShell.CreateSubKey("AESHelper.ShredDirectory", true);
             DirectoryShellAESHelperShredDirectory.SetValue(null, "AES Shred Directory");
@@ -148,10 +156,6 @@ namespace AESHelper.Installer
                 newPathValue += pathSubValue + ";";
             }
             Environment.SetEnvironmentVariable("PATH", newPathValue, EnvironmentVariableTarget.Machine);
-        }
-        public static void InstallRegistries()
-        {
-
         }
         public static void Uninstall()
         {
@@ -186,9 +190,30 @@ namespace AESHelper.Installer
                 {
                     RegistryKey Star = root.OpenSubKey("*", true);
                     RegistryKey StarShell = Star.OpenSubKey("shell", true);
-                    StarShell.DeleteSubKeyTree("AESHelper.EncryptFile", false);
-                    StarShell.DeleteSubKeyTree("AESHelper.DecryptFile", false);
-                    StarShell.DeleteSubKeyTree("AESHelper.ShredFile", false);
+                    try
+                    {
+                        StarShell.DeleteSubKeyTree("AESHelper.EncryptFile", false);
+                    }
+                    catch
+                    {
+
+                    }
+                    try
+                    {
+                        StarShell.DeleteSubKeyTree("AESHelper.DecryptFile", false);
+                    }
+                    catch
+                    {
+
+                    }
+                    try
+                    {
+                        StarShell.DeleteSubKeyTree("AESHelper.ShredFile", false);
+                    }
+                    catch
+                    {
+
+                    }
                     StarShell.Dispose();
                     Star.Dispose();
                 }
@@ -200,8 +225,23 @@ namespace AESHelper.Installer
                 {
                     RegistryKey DirectoryKey = root.OpenSubKey("Directory", true);
                     RegistryKey DirectoryShell = DirectoryKey.OpenSubKey("shell", true);
-                    DirectoryShell.DeleteSubKeyTree("AESHelper.EncryptDirectory", false);
-                    DirectoryShell.DeleteSubKeyTree("AESHelper.ShredDirectory", false);
+                    try
+                    {
+                        DirectoryShell.DeleteSubKeyTree("AESHelper.EncryptDirectory", false);
+                    }
+                    catch
+                    {
+
+                    }
+                    try
+                    {
+                        DirectoryShell.DeleteSubKeyTree("AESHelper.ShredDirectory", false);
+
+                    }
+                    catch
+                    {
+
+                    }
                     DirectoryShell.Dispose();
                     DirectoryKey.Dispose();
                 }
@@ -238,10 +278,6 @@ namespace AESHelper.Installer
             {
 
             }
-        }
-        public static void UninstallRegistries()
-        {
-
         }
     }
 }
