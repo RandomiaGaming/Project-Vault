@@ -1,0 +1,7 @@
+D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.csproj.AssemblyReference.cache
+D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.csproj.CoreCompileInputs.cache
+D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\bin\Release\Project Vault - Installer.exe.config
+D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\bin\Release\Project Vault - Installer.exe
+D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\bin\Release\Project Vault - Installer.pdb
+D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.exe
+D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.pdb

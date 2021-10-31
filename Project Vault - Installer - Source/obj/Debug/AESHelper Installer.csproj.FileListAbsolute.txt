@@ -1,0 +1,7 @@
+D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Debug\AESHelper Installer.csproj.AssemblyReference.cache
+D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Debug\AESHelper Installer.csproj.CoreCompileInputs.cache
+D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\bin\Debug\AESHelperInstaller.exe.config
+D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\bin\Debug\AESHelperInstaller.exe
+D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\bin\Debug\AESHelperInstaller.pdb
+D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Debug\AESHelperInstaller.exe
+D:\C# Windows Apps\AESHelper\AESHelper Installer - Source\obj\Debug\AESHelperInstaller.pdb

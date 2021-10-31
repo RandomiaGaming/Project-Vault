@@ -1,0 +1,7 @@
+D:\C# Windows Apps\Project Vault\Project Vault - Source\bin\Debug\ProjectVault.exe.config
+D:\C# Windows Apps\Project Vault\Project Vault - Source\bin\Debug\ProjectVault.exe
+D:\C# Windows Apps\Project Vault\Project Vault - Source\bin\Debug\ProjectVault.pdb
+D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Debug\Project-Vault.csproj.AssemblyReference.cache
+D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Debug\Project-Vault.csproj.CoreCompileInputs.cache
+D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Debug\ProjectVault.exe
+D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Debug\ProjectVault.pdb
