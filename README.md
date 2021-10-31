@@ -7,4 +7,4 @@ To report bugs or request features please create an issue in the issues tab.
 
 #This program was not created by a security expert and should be used for low stakes encryption only. I (Jacobi Christ) am not liable for any problems of any kind that may result from use of this program.
 
-# Use at your own risk.
+## Use at your own risk.
