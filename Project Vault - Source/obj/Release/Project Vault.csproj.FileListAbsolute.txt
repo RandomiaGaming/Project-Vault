@@ -5,3 +5,10 @@ D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Release\Project Vaul
 D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Release\Project Vault.exe
 D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Release\Project Vault.pdb
 D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Release\Project Vault.csproj.AssemblyReference.cache
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\bin\Release\Project Vault.exe.config
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\bin\Release\Project Vault.exe
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\bin\Release\Project Vault.pdb
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\obj\Release\Project Vault.csproj.AssemblyReference.cache
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\obj\Release\Project Vault.csproj.CoreCompileInputs.cache
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\obj\Release\Project Vault.exe
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\obj\Release\Project Vault.pdb

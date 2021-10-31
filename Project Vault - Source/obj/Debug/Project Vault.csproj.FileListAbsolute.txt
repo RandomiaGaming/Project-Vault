@@ -1,0 +1,7 @@
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\bin\Debug\Project Vault.exe.config
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\bin\Debug\Project Vault.exe
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\bin\Debug\Project Vault.pdb
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\obj\Debug\Project Vault.csproj.AssemblyReference.cache
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\obj\Debug\Project Vault.csproj.CoreCompileInputs.cache
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\obj\Debug\Project Vault.exe
+C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Source\obj\Debug\Project Vault.pdb

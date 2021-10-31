@@ -283,6 +283,10 @@ namespace ProjectVault
             {
                 throw new Exception("Could not run EncryptFile command because filePath does not exist.");
             }
+            else if (Path.GetExtension(filePath).ToUpper() == ".AES")
+            {
+                throw new Exception("Could not run EncryptFile command because the file was already encrypted.");
+            }
             string password = PromptForPasswordWithConfirmation();
             byte[] passwordBytes = StringEncodingHelper.StringToBytes(password);
             AESHelper.EncryptFile(filePath, passwordBytes);
@@ -329,6 +333,10 @@ namespace ProjectVault
             else if (!File.Exists(filePath))
             {
                 throw new Exception("Could not run DecryptFile command because filePath does not exist.");
+            }
+            else if (Path.GetExtension(filePath).ToUpper() != ".AES")
+            {
+                throw new Exception("Could not run DecryptFile command because the file was not encrypted.");
             }
             string password = PromptForPassword();
             byte[] passwordBytes = StringEncodingHelper.StringToBytes(password);
@@ -389,5 +397,4 @@ namespace ProjectVault
         }
         #endregion
     }
-    //Fix all da file dup bug you bafoon.
 }

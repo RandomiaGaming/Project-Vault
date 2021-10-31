@@ -45,7 +45,7 @@
     <Compile Include="Project Vault\AESHeader.cs" />
     <Compile Include="Project Vault\AESHelper.cs" />
     <Compile Include="Project Vault\ArrayHelper.cs" />
-    <Compile Include="Project Vault\AssemblyInfo.cs" />
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Project Vault\ExceptionHelper.cs" />
     <Compile Include="Project Vault\RandomnessHelper.cs" />

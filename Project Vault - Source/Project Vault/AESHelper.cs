@@ -56,17 +56,15 @@ namespace ProjectVault
 
             CryptoStream cryptoStream = new CryptoStream(destination, decryptor, CryptoStreamMode.Write);
 
-            ulong totalMemory = new ComputerInfo().TotalPhysicalMemory;
-            long chunkSize = (long)Math.Ceiling(totalMemory / 100.0);
-            if (chunkSize > int.MaxValue)
-            {
-                chunkSize = int.MaxValue;
-            }
-
             long currentIndex = 0;
-
             while (currentIndex < source.Length)
             {
+                ulong totalMemory = new ComputerInfo().AvailablePhysicalMemory;
+                long chunkSize = (long)Math.Ceiling(totalMemory / 2.0);
+                if (chunkSize > int.MaxValue)
+                {
+                    chunkSize = int.MaxValue;
+                }
                 long bufferSize = source.Length - currentIndex;
                 if (bufferSize > chunkSize)
                 {
@@ -125,16 +123,34 @@ namespace ProjectVault
             {
                 throw new Exception($"Could not encrypt file because file already exists at destinationFilePath.");
             }
+            FileStream sourceFileStream = null;
+            FileStream destinationFileStream = null;
             try
             {
-                FileStream sourceFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read);
-                FileStream destinationFileStream = File.Open(destinationFilePath, FileMode.Create, FileAccess.Write);
+                sourceFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+                destinationFileStream = File.Open(destinationFilePath, FileMode.Create, FileAccess.Write);
                 EncryptStream(sourceFileStream, destinationFileStream, key);
                 sourceFileStream.Dispose();
                 destinationFileStream.Dispose();
             }
             catch (Exception ex)
             {
+                try
+                {
+                    sourceFileStream.Dispose();
+                }
+                catch
+                {
+
+                }
+                try
+                {
+                    destinationFileStream.Dispose();
+                }
+                catch
+                {
+
+                }
                 try
                 {
                     File.Delete(destinationFilePath);
@@ -229,17 +245,15 @@ namespace ProjectVault
 
             CryptoStream cryptoStream = new CryptoStream(destination, decryptor, CryptoStreamMode.Write);
 
-            ulong totalMemory = new ComputerInfo().TotalPhysicalMemory;
-            long chunkSize = (long)Math.Ceiling(totalMemory / 100.0);
-            if (chunkSize > int.MaxValue)
-            {
-                chunkSize = int.MaxValue;
-            }
-
             long currentIndex = AESHeader.HeaderLength;
-
             while (currentIndex < source.Length)
             {
+                ulong totalMemory = new ComputerInfo().AvailablePhysicalMemory;
+                long chunkSize = (long)Math.Ceiling(totalMemory / 2.0);
+                if (chunkSize > int.MaxValue)
+                {
+                    chunkSize = int.MaxValue;
+                }
                 long bufferSize = source.Length - currentIndex;
                 if (bufferSize > chunkSize)
                 {
@@ -298,16 +312,34 @@ namespace ProjectVault
             {
                 throw new Exception($"Could not decrypt file because file already exists at destinationFilePath.");
             }
+            FileStream sourceFileStream = null;
+            FileStream destinationFileStream = null;
             try
             {
-                FileStream sourceFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read);
-                FileStream destinationFileStream = File.Open(destinationFilePath, FileMode.Create, FileAccess.Write);
+                sourceFileStream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+                destinationFileStream = File.Open(destinationFilePath, FileMode.Create, FileAccess.Write);
                 DecryptStream(sourceFileStream, destinationFileStream, key);
                 sourceFileStream.Dispose();
                 destinationFileStream.Dispose();
             }
             catch (Exception ex)
             {
+                try
+                {
+                    sourceFileStream.Dispose();
+                }
+                catch
+                {
+
+                }
+                try
+                {
+                    destinationFileStream.Dispose();
+                }
+                catch
+                {
+
+                }
                 try
                 {
                     ShreddingHelper.ShredFile(destinationFilePath);

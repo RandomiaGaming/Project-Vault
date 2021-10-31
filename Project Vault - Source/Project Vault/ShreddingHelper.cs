@@ -30,18 +30,18 @@ namespace ProjectVault
             {
                 return;
             }
-            ulong totalMemory = new ComputerInfo().TotalPhysicalMemory;
-            long chunkSize = (long)Math.Ceiling(totalMemory / 100.0);
-            if (chunkSize > int.MaxValue)
-            {
-                chunkSize = int.MaxValue;
-            }
             for (int p = 0; p < passes; p++)
             {
                 source.Position = 0;
                 long currentIndex = 0;
                 while (currentIndex < source.Length)
                 {
+                    ulong totalMemory = new ComputerInfo().AvailablePhysicalMemory;
+                    long chunkSize = (long)Math.Ceiling(totalMemory / 2.0);
+                    if (chunkSize > int.MaxValue)
+                    {
+                        chunkSize = int.MaxValue;
+                    }
                     long bufferSize = source.Length - currentIndex;
                     if (bufferSize > chunkSize)
                     {
@@ -76,18 +76,18 @@ namespace ProjectVault
             {
                 return;
             }
-            ulong totalMemory = new ComputerInfo().TotalPhysicalMemory;
-            long chunkSize = (long)Math.Ceiling(totalMemory / 100.0);
-            if (chunkSize > int.MaxValue)
-            {
-                chunkSize = int.MaxValue;
-            }
             for (int p = 0; p < passes; p++)
             {
                 source.Position = 0;
                 long currentIndex = 0;
                 while (currentIndex < source.Length)
                 {
+                    ulong totalMemory = new ComputerInfo().AvailablePhysicalMemory;
+                    long chunkSize = (long)Math.Ceiling(totalMemory / 2.0);
+                    if (chunkSize > int.MaxValue)
+                    {
+                        chunkSize = int.MaxValue;
+                    }
                     long bufferSize = source.Length - currentIndex;
                     if (bufferSize > chunkSize)
                     {
