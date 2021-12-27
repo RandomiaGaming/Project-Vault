@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ProjectVault.PermissionRequestPage"
+             BackgroundColor="#ffff96">
+    <ContentPage.Content>
+        <StackLayout x:Name="RootContainer" Grid.Row="0" Grid.Column="0" Padding="20" Spacing="10" Margin="0">
+            <Label x:Name="MessageBox1" Text="Project Vault needs access to your files and folders in order to encrypt and decrypt them. To grant this permission press the grant permission button below then tap on Project Vault and select allow." VerticalOptions="Start" LineBreakMode="WordWrap" FontSize="20" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" TextColor="Black" HorizontalOptions="Fill" />
+            <Label x:Name="MessageBox2" Text="If you feel uncomfortable gifting this permission that is okay, however, Project Vault will be unable to function on your device." VerticalOptions="Start" LineBreakMode="WordWrap" FontSize="20" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" TextColor="Black" HorizontalOptions="Fill" />
+            <Label x:Name="MessageBox3" Text="The requested permission manifest string is android.permission.MANAGE_EXTERNAL_STORAGE" VerticalOptions="Start" LineBreakMode="WordWrap" FontSize="20" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" TextColor="Black" HorizontalOptions="Fill" />
+            <Grid x:Name="NavbarContainer" HeightRequest="75" HorizontalOptions="FillAndExpand" VerticalOptions="EndAndExpand">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Row="0" Grid.Column="0" x:Name="CloseAppButton" Text="Close App..." Clicked="OnCloseAppButtonPressed" FontSize="20" TextColor="Black" FontAttributes="Bold" BackgroundColor="#9696ff" CornerRadius="10"  HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" />
+            <Button Grid.Row="0" Grid.Column="1" x:Name="GrantPermissionButton" Text="Grant Permission..." Clicked="OnGrantPermissionsButtonPressed" FontSize="20" TextColor="Black" FontAttributes="Bold" BackgroundColor="#9696ff" CornerRadius="10" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" />
+        </Grid>
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

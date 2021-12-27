@@ -1,7 +1,0 @@
-D:\C# Windows Apps\Project Vault\Project Vault - Source\bin\Release\ProjectVault.exe.config
-D:\C# Windows Apps\Project Vault\Project Vault - Source\bin\Release\ProjectVault.exe
-D:\C# Windows Apps\Project Vault\Project Vault - Source\bin\Release\ProjectVault.pdb
-D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Release\Project-Vault.csproj.AssemblyReference.cache
-D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Release\Project-Vault.csproj.CoreCompileInputs.cache
-D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Release\ProjectVault.exe
-D:\C# Windows Apps\Project Vault\Project Vault - Source\obj\Release\ProjectVault.pdb

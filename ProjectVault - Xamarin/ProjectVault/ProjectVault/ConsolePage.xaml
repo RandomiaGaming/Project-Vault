@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ProjectVault.ConsolePage"
+             BackgroundColor="#ffff96">
+    <ContentPage.Content>
+        <Grid x:Name="MainGrid" VerticalOptions="Fill" HorizontalOptions="Fill" Padding="0" Margin="0" FlowDirection="LeftToRight">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="100" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackLayout x:Name="ContentContainer" Grid.Row="0" Grid.Column="0" Padding="20" Spacing="10" Margin="0">
+                <Label x:Name="ContentTitle" Text="Console" HeightRequest="50" FontSize="40" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" TextColor="Black" HorizontalOptions="Fill" VerticalOptions="Center" />
+                <ScrollView x:Name="ConsoleContainer" BackgroundColor="#9696ff" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand" HorizontalScrollBarVisibility="Never" VerticalScrollBarVisibility="Always">
+                    <Label x:Name="ConsoleText" LineBreakMode="CharacterWrap" Text=""  FontSize="20" HorizontalTextAlignment="Start" VerticalTextAlignment="End" TextColor="Black" FontAttributes="Bold" BackgroundColor="#9696ff" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand"/>
+                </ScrollView>
+                <Entry x:Name="CommandEntry" IsTextPredictionEnabled="False" Text="" Placeholder="Command..." FontSize="20" HorizontalTextAlignment="Start" PlaceholderColor="#64000000" VerticalTextAlignment="Center" TextColor="Black" FontAttributes="Bold" BackgroundColor="#9696ff" HeightRequest="50" HorizontalOptions="FillAndExpand"/>
+                <Button x:Name="RunCommandButton" Pressed="OnRunCommandButtonPressed" Text="Run Command..." FontSize="20" TextColor="Black" FontAttributes="Bold" BackgroundColor="#9696ff" CornerRadius="10" HeightRequest="50" HorizontalOptions="FillAndExpand" />
+            </StackLayout>
+            <Grid x:Name="Navbar" Grid.Row="1" Grid.Column="0" VerticalOptions="Fill" HorizontalOptions="Fill" Padding="10" Margin="0" ColumnSpacing="10" RowSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"  />
+                </Grid.RowDefinitions>
+                <Button x:Name="EncryptPageButton" Text="Encrypt" Clicked="OnEncryptPageButtonPressed" Grid.Column="0" BackgroundColor="#ff9696" Grid.Row="0" CornerRadius="20" FontSize="Title" TextColor="Black" FontAttributes="Bold" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand"/>
+                <Button x:Name="DecryptPageButton" Text="Decrypt" Clicked="OnDecryptPageButtonPressed" Grid.Column="1" BackgroundColor="#96ff96" Grid.Row="0" CornerRadius="20" FontSize="Title" TextColor="Black" FontAttributes="Bold" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand"/>
+                <Button x:Name="ConsolePageButton" Text="Console" Clicked="OnConsolePageButtonPressed" Grid.Column="2" BackgroundColor="#9696ff" Grid.Row="0" CornerRadius="20" FontSize="Title" TextColor="Black" FontAttributes="Bold" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand"/>
+            </Grid>
+        </Grid>
+    </ContentPage.Content>
+</ContentPage>

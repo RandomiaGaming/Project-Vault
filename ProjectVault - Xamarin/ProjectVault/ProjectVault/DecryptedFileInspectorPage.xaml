@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ProjectVault.DecryptedFileInspectorPage"
+             BackgroundColor="#ffff96">
+    <ContentPage.Content>
+        <StackLayout x:Name="RootContainer" Grid.Row="0" Grid.Column="0" Padding="20" Spacing="10" Margin="0">
+            <Entry IsSpellCheckEnabled="False" x:Name="PathEntry" Text="/storage/emulated/0" Unfocused="OnPathEntryUnfocused" BackgroundColor="#40000000" HorizontalTextAlignment="Start" HeightRequest="50" FontSize="20" VerticalTextAlignment="Center" TextColor="Black" HorizontalOptions="Fill" VerticalOptions="Center" />
+            <StackLayout x:Name="ContentContainer" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
+                <Label x:Name="ContentTitle" Text="Encrypt File" HeightRequest="50" FontSize="40" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" TextColor="Black" HorizontalOptions="Fill" VerticalOptions="Center" />
+                <Entry x:Name="PasswordEntry" IsTextPredictionEnabled="False" Text="" Placeholder="Password..." IsPassword="True" FontSize="20" HorizontalTextAlignment="Start" PlaceholderColor="#64000000" VerticalTextAlignment="Center" TextColor="Black" FontAttributes="Bold" BackgroundColor="#ff9696" HeightRequest="50" HorizontalOptions="FillAndExpand"/>
+                <Entry x:Name="ConfirmPasswordEntry" IsTextPredictionEnabled="False" Text="" Placeholder="Confirm Password..." IsPassword="True" FontSize="20" HorizontalTextAlignment="Start" PlaceholderColor="#64000000" VerticalTextAlignment="Center" TextColor="Black" FontAttributes="Bold" BackgroundColor="#ff9696" HeightRequest="50" HorizontalOptions="FillAndExpand"/>
+                <Button x:Name="EncryptFileButton" Clicked="OnEncryptFileButtonPressed" Text="Encrypt File..." FontSize="20" TextColor="Black" FontAttributes="Bold" BackgroundColor="#ff9696" CornerRadius="10" HeightRequest="50" HorizontalOptions="FillAndExpand" />
+            </StackLayout>
+            <Button x:Name="VirtualBackButton" Text="Go Back..." Clicked="OnVirtualBackButtonPressed" FontSize="20" TextColor="Black" FontAttributes="Bold" BackgroundColor="#9696ff" CornerRadius="10" HeightRequest="50" HorizontalOptions="FillAndExpand" />
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

@@ -8,5 +8,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("Trademark RandomiaGaming 2021")]
 [assembly: ComVisible(false)]
 [assembly: Guid("801b6948-1638-4f49-937f-bf9086e22243")]
-[assembly: AssemblyVersion("2.3")]
-[assembly: AssemblyFileVersion("2.3")]
+[assembly: AssemblyVersion("2.4")]
+[assembly: AssemblyFileVersion("2.4")]

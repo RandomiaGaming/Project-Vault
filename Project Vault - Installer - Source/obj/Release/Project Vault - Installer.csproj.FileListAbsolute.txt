@@ -5,10 +5,3 @@ D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\bin\Release\
 D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\bin\Release\Project Vault - Installer.pdb
 D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.exe
 D:\C# Windows Apps\Project Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.pdb
-C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Installer - Source\bin\Release\Project Vault - Installer.exe.config
-C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Installer - Source\bin\Release\Project Vault - Installer.exe
-C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Installer - Source\bin\Release\Project Vault - Installer.pdb
-C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.csproj.AssemblyReference.cache
-C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.csproj.CoreCompileInputs.cache
-C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.exe
-C:\Users\RandomiaGaming\Desktop\Project-Vault\Project Vault - Installer - Source\obj\Release\Project Vault - Installer.pdb
