@@ -64,6 +64,10 @@ namespace ProjectVault
             }
             for (int i = 0; i < arrayA.Length; i++)
             {
+                if((arrayA[i] is null || arrayB[i] is null) && !(arrayA[i] is null && arrayB[i] is null))
+                {
+return false;
+                }
                 if (!arrayA[i].Equals(arrayB[i]))
                 {
                     return false;
